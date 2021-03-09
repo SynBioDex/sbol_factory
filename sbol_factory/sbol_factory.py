@@ -46,11 +46,11 @@ class ValidationReport():
 
 # def help():
 #     #logging.getLogger().setLevel(logging.INFO)
-#     print(OPILFactory.__doc__)
+#     print(SBOLFactory.__doc__)
 
 
 
-class OPILFactory():
+class SBOLFactory():
 
     query = None
 
@@ -58,8 +58,8 @@ class OPILFactory():
         self.namespace = rdflib.URIRef(ontology_namespace)
         self.doc = ''
         docstring = ''
-        OPILFactory.query = Query(ontology_path)
-        for class_uri in OPILFactory.query.query_classes():
+        SBOLFactory.query = Query(ontology_path)
+        for class_uri in SBOLFactory.query.query_classes():
             docstring += self.generate(class_uri)
         if verbose:
             print(docstring)
@@ -68,7 +68,7 @@ class OPILFactory():
 
         if self.namespace not in class_uri: 
             return ''
-        superclass_uri = OPILFactory.query.query_superclass(class_uri)
+        superclass_uri = SBOLFactory.query.query_superclass(class_uri)
         log += self.generate(superclass_uri, log)  # Recurse into superclasses
 
         CLASS_URI = class_uri
@@ -92,37 +92,37 @@ class OPILFactory():
             self.type_uri = CLASS_URI
 
             # Object properties can be either compositional or associative
-            property_uris = OPILFactory.query.query_object_properties(CLASS_URI)
-            compositional_properties = OPILFactory.query.query_compositional_properties(CLASS_URI)
+            property_uris = SBOLFactory.query.query_object_properties(CLASS_URI)
+            compositional_properties = SBOLFactory.query.query_compositional_properties(CLASS_URI)
             associative_properties = [uri for uri in property_uris if uri not in
                                         compositional_properties]
 
             # Initialize associative properties
             for property_uri in associative_properties:
-                property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
-                lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, CLASS_URI)
+                property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
+                lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
                 self.__dict__[property_name] = sbol.ReferencedObject(self, property_uri, lower_bound, upper_bound)
 
             # Initialize compositional properties
             for property_uri in compositional_properties:
-                property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
-                lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, CLASS_URI)
+                property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
+                lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
                 self.__dict__[property_name] = sbol.OwnedObject(self, property_uri, lower_bound, upper_bound)
 
             # Initialize datatype properties
-            property_uris = OPILFactory.query.query_datatype_properties(CLASS_URI)
+            property_uris = SBOLFactory.query.query_datatype_properties(CLASS_URI)
             for property_uri in property_uris:
-                property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
+                property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
 
                 # Get the datatype of this property
-                datatypes = OPILFactory.query.query_property_datatype(property_uri, CLASS_URI)
+                datatypes = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)
                 if len(datatypes) == 0:
                     continue
                 if len(datatypes) > 1:  # This might indicate an error in the ontology
                     raise
 
                 # Get the cardinality of this datatype property
-                lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, CLASS_URI)
+                lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
                 if datatypes[0] == 'http://www.w3.org/2001/XMLSchema#string':
                     self.__dict__[property_name] = sbol.TextProperty(self, property_uri, lower_bound, upper_bound)
                 elif datatypes[0] == 'http://www.w3.org/2001/XMLSchema#int':
@@ -140,25 +140,25 @@ class OPILFactory():
         sbol.Document.register_builder(str(CLASS_URI), Class)
 
         # Print out properties -- this is for logging only
-        property_uris = OPILFactory.query.query_object_properties(CLASS_URI)
+        property_uris = SBOLFactory.query.query_object_properties(CLASS_URI)
         for property_uri in property_uris:
-            property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
-            datatype = OPILFactory.query.query_property_datatype(property_uri, CLASS_URI)
+            property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
+            datatype = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)
             if len(datatype):
                 datatype = sbol.utils.parse_class_name(datatype[0])
             else:
                 datatype = None
-            lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, CLASS_URI)
+            lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
             log += f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n'
-        property_uris = OPILFactory.query.query_datatype_properties(CLASS_URI)
+        property_uris = SBOLFactory.query.query_datatype_properties(CLASS_URI)
         for property_uri in property_uris:
-            property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
-            datatype = OPILFactory.query.query_property_datatype(property_uri, CLASS_URI)
+            property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
+            datatype = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)
             if len(datatype):
                 datatype = sbol.utils.parse_class_name(datatype[0])
             else:
                 datatype = None
-            lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, CLASS_URI)            
+            lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)            
             log += f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n'
         return log
 
@@ -166,8 +166,8 @@ class UMLFactory():
 
     def __init__(self, opil_factory, output_path):
         self.opil_factory = opil_factory
-        OPILFactory.query = opil_factory.query
-        for class_uri in OPILFactory.query.query_classes():
+        SBOLFactory.query = opil_factory.query
+        for class_uri in SBOLFactory.query.query_classes():
             if self.opil_factory.namespace not in class_uri:
                 continue
             class_name = sbol.utils.parse_class_name(class_uri)
@@ -185,7 +185,7 @@ class UMLFactory():
     def generate(self, class_uri, drawing_method_callback, dot_graph=None):
         if self.opil_factory.namespace not in class_uri:
             return ''
-        superclass_uri = OPILFactory.query.query_superclass(class_uri)
+        superclass_uri = SBOLFactory.query.query_superclass(class_uri)
         self.generate(superclass_uri, drawing_method_callback, dot_graph)
 
         class_name = sbol.utils.parse_class_name(class_uri)
@@ -197,7 +197,7 @@ class UMLFactory():
 
     def draw_abstraction_hierarchy(self, class_uri, superclass_uri, dot_graph=None):
 
-        subclass_uris = OPILFactory.query.query_subclasses(class_uri)
+        subclass_uris = SBOLFactory.query.query_subclasses(class_uri)
         if len(subclass_uris) <= 1:
             return 
 
@@ -229,8 +229,8 @@ class UMLFactory():
         label = f'{qname}|'
 
         # Object properties can be either compositional or associative
-        property_uris = OPILFactory.query.query_object_properties(class_uri)
-        compositional_properties = OPILFactory.query.query_compositional_properties(class_uri)
+        property_uris = SBOLFactory.query.query_object_properties(class_uri)
+        compositional_properties = SBOLFactory.query.query_compositional_properties(class_uri)
         associative_properties = [uri for uri in property_uris if uri not in
                                     compositional_properties]
 
@@ -238,41 +238,41 @@ class UMLFactory():
         for property_uri in associative_properties:
             if len(associative_properties) != len(set(associative_properties)):
                 print(f'{property_uri} is found more than once')
-            property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
+            property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
             property_name = format_qname(property_uri)
-            lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, class_uri)
+            lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, class_uri)
             if upper_bound == inf:
                 upper_bound = '*'
-            object_class_uri = OPILFactory.query.query_property_datatype(property_uri, class_uri)
+            object_class_uri = SBOLFactory.query.query_property_datatype(property_uri, class_uri)
             arrow_label = f'{property_name} [{lower_bound}..{upper_bound}]'
 
         # Label compositional properties
         for property_uri in compositional_properties:
             if len(compositional_properties) != len(set(compositional_properties)):
                 print(f'{property_uri} is found more than once')
-            property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
+            property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
             property_name = format_qname(property_uri)
-            cardinality = OPILFactory.query.query_cardinality(property_uri, class_uri)
-            lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, class_uri)
+            cardinality = SBOLFactory.query.query_cardinality(property_uri, class_uri)
+            lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, class_uri)
             if upper_bound == inf:
                 upper_bound = '*'
-            object_class_uri = OPILFactory.query.query_property_datatype(property_uri, class_uri)
+            object_class_uri = SBOLFactory.query.query_property_datatype(property_uri, class_uri)
             arrow_label = f'{property_name} [{lower_bound}..{upper_bound}]'
 
         # Label datatype properties
-        property_uris = OPILFactory.query.query_datatype_properties(class_uri)
+        property_uris = SBOLFactory.query.query_datatype_properties(class_uri)
         for property_uri in property_uris:
-            property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
+            property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
             property_name = format_qname(property_uri)
 
             # Get the datatype of this property
-            datatypes = OPILFactory.query.query_property_datatype(property_uri, class_uri)
+            datatypes = SBOLFactory.query.query_property_datatype(property_uri, class_uri)
             if len(datatypes) == 0:
                 continue
             if len(datatypes) > 1:  # This might indicate an error in the ontology
                 raise
             # Get the cardinality of this datatype property
-            lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, class_uri)
+            lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, class_uri)
             if upper_bound == inf:
                 upper_bound = '*'
             datatype = sbol.utils.parse_class_name(datatypes[0])
@@ -301,8 +301,8 @@ class UMLFactory():
         create_inheritance(dot, superclass_uri, class_uri)
 
         # Object properties can be either compositional or associative
-        property_uris = OPILFactory.query.query_object_properties(CLASS_URI)
-        compositional_properties = OPILFactory.query.query_compositional_properties(CLASS_URI)
+        property_uris = SBOLFactory.query.query_object_properties(CLASS_URI)
+        compositional_properties = SBOLFactory.query.query_compositional_properties(CLASS_URI)
         associative_properties = [uri for uri in property_uris if uri not in
                                     compositional_properties]
 
@@ -310,12 +310,12 @@ class UMLFactory():
         for property_uri in associative_properties:
             if len(associative_properties) != len(set(associative_properties)):
                 print(f'{property_uri} is found more than once')
-            property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
+            property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
             property_name = format_qname(property_uri)
-            lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, class_uri)
+            lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, class_uri)
             if upper_bound == inf:
                 upper_bound = '*'
-            object_class_uri = OPILFactory.query.query_property_datatype(property_uri, CLASS_URI)[0]
+            object_class_uri = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)[0]
             arrow_label = f'{property_name} [{lower_bound}..{upper_bound}]'
             create_association(dot, class_uri, object_class_uri, arrow_label)
             # self.__dict__[property_name] = sbol.ReferencedObject(self, property_uri, 0, upper_bound)
@@ -324,29 +324,29 @@ class UMLFactory():
         for property_uri in compositional_properties:
             if len(compositional_properties) != len(set(compositional_properties)):
                 print(f'{property_uri} is found more than once')
-            property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
+            property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
             property_name = format_qname(property_uri)
-            lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, class_uri)
+            lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, class_uri)
             if upper_bound == inf:
                 upper_bound = '*'
-            object_class_uri = OPILFactory.query.query_property_datatype(property_uri, CLASS_URI)[0]
+            object_class_uri = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)[0]
             arrow_label = f'{property_name} [{lower_bound}..{upper_bound}]'
             create_composition(dot, class_uri, object_class_uri, arrow_label)
 
         # Initialize datatype properties
-        property_uris = OPILFactory.query.query_datatype_properties(CLASS_URI)
+        property_uris = SBOLFactory.query.query_datatype_properties(CLASS_URI)
         for property_uri in property_uris:
-            property_name = OPILFactory.query.query_label(property_uri).replace(' ', '_')
+            property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
             property_name = format_qname(property_uri)
 
             # Get the datatype of this property
-            datatypes = OPILFactory.query.query_property_datatype(property_uri, CLASS_URI)
+            datatypes = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)
             if len(datatypes) == 0:
                 continue
             if len(datatypes) > 1:  # This might indicate an error in the ontology
                 raise
             # Get the cardinality of this datatype property
-            lower_bound, upper_bound = OPILFactory.query.query_cardinality(property_uri, class_uri)
+            lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, class_uri)
             if upper_bound == inf:
                 upper_bound = '*'
 
@@ -432,49 +432,3 @@ def create_inheritance(dot_graph, superclass_uri, subclass_uri):
     label = '{' + qname + '|}'
     create_uml_record(dot_graph, superclass_uri, label)
 
-
-MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-i",
-    "--input",
-    help="Input ontology",
-)
-parser.add_argument(
-    "-n",
-    "--namespace",
-    help="Ontology namespace",
-)
-parser.add_argument(
-    "-d",
-    "--documentation",
-    help="Output directory for UML"
-)
-parser.add_argument(
-    "-v",
-    "--verbose",
-    help="Print data model as it is generated",
-    default=False,
-    action='store_true'
-)
-
-# Generate a dictionary from the command-line arguments
-args_dict = vars(parser.parse_args())
-if args_dict['input'] and not args_dict['namespace']:
-    raise Exception('If specifying an input ontology, a namespace must also be specified')
-
-# Import ontology
-default_ontology = posixpath.join(MODULE_PATH, 'rdf/opil.ttl')
-opil_path = posixpath.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/opil.ttl')
-if not args_dict['input']:
-    opil_factory = OPILFactory(opil_path, Query.OPIL, args_dict['verbose'])
-else:
-    opil_factory = OPILFactory(args_dict['input'], args_dict['namespace'], args_dict['verbose'])
-
-# Generate documentation
-if args_dict['documentation']:
-    OUTPUT_PATH = args_dict['documentation']
-    if not os.path.exists(OUTPUT_PATH):
-        os.mkdir(OUTPUT_PATH)
-    UMLFactory(opil_factory, OUTPUT_PATH)

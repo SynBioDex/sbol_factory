@@ -16,6 +16,7 @@ import argparse
 import graphviz
 #import logging
 
+
 # Expose Document through the OPIL API
 class Document(sbol.Document):
 
@@ -54,8 +55,9 @@ class SBOLFactory():
 
     query = None
 
-    def __init__(self, ontology_path, ontology_namespace, verbose=False):
+    def __init__(self, module_scope, ontology_path, ontology_namespace, verbose=False):
         self.namespace = rdflib.URIRef(ontology_namespace)
+        self.symbol_table = module_scope
         self.doc = ''
         docstring = ''
         SBOLFactory.query = Query(ontology_path)
@@ -137,6 +139,7 @@ class SBOLFactory():
         attribute_dict['__init__'] = __init__
         Class = type(CLASS_NAME, (globals()[SUPERCLASS_NAME],), attribute_dict)
         globals()[CLASS_NAME] = Class
+        self.symbol_table[CLASS_NAME] = Class
         sbol.Document.register_builder(str(CLASS_URI), Class)
 
         # Print out properties -- this is for logging only
@@ -162,13 +165,17 @@ class SBOLFactory():
             log += f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n'
         return log
 
-class UMLFactory():
+class UMLFactory:
 
-    def __init__(self, opil_factory, output_path):
-        self.opil_factory = opil_factory
-        SBOLFactory.query = opil_factory.query
+    def __init__(self, factory):
+        self.factory = factory
+        SBOLFactory.query = factory.query
+
+    def generate(self, output_path):
+        if not os.path.exists(output_path):
+            os.mkdir(output_path)
         for class_uri in SBOLFactory.query.query_classes():
-            if self.opil_factory.namespace not in class_uri:
+            if self.factory.namespace not in class_uri:
                 continue
             class_name = sbol.utils.parse_class_name(class_uri)
             dot = graphviz.Digraph(class_name)
@@ -176,17 +183,17 @@ class UMLFactory():
 
             # Order matters here, as the label for an entity
             # will depend on the last rendering method called
-            self.generate(class_uri, self.draw_abstraction_hierarchy, dot)
-            self.generate(class_uri, self.draw_class_definition, dot)
+            self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
+            self._generate(class_uri, self.draw_class_definition, dot)
             source = graphviz.Source(dot.source.replace('\\\\', '\\'))
             outfile = f'{class_name}_abstraction_hierarchy'
             source.render(posixpath.join(output_path, outfile))
 
-    def generate(self, class_uri, drawing_method_callback, dot_graph=None):
-        if self.opil_factory.namespace not in class_uri:
+    def _generate(self, class_uri, drawing_method_callback, dot_graph=None):
+        if self.factory.namespace not in class_uri:
             return ''
         superclass_uri = SBOLFactory.query.query_superclass(class_uri)
-        self.generate(superclass_uri, drawing_method_callback, dot_graph)
+        self._generate(superclass_uri, drawing_method_callback, dot_graph)
 
         class_name = sbol.utils.parse_class_name(class_uri)
 

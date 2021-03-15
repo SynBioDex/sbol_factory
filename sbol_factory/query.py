@@ -249,3 +249,13 @@ class Query():
             raise Exception(f'{property_uri} has more than one label')
         property_name = response[0]
         return property_name
+
+    def is_top_level(self, class_uri):
+        query = '''
+            SELECT ?type
+            WHERE {
+              ?type rdfs:subClassOf* sbol:TopLevel.
+            }'''
+        response = self.graph.query(query)
+        response = [str(row[0]) for row in response]
+        return class_uri in response

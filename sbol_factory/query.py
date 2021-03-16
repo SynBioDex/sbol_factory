@@ -259,3 +259,28 @@ class Query():
         response = self.graph.query(query)
         response = [str(row[0]) for row in response]
         return class_uri in response
+
+    def query_required_properties(self, class_uri):
+        required = []
+        for cls in self.query_inheritance_hierarchy(class_uri):
+            properties = self.query_datatype_properties(cls)
+            properties += self.query_object_properties(cls)
+            for p in properties:
+                lb, ub = self.query_cardinality(p, cls)
+                if lb == 1:
+                    label = self.query_label(p)
+                    required.append(label)
+        return required
+
+    def query_inheritance_hierarchy(self, class_uri):
+        query = '''
+            SELECT distinct ?superclass 
+            WHERE 
+            {{
+                <{}> rdfs:subClassOf* ?superclass .
+                ?superclass rdf:type owl:Class .
+            }}
+            '''.format(class_uri)
+        response = self.graph.query(query)
+        subclasses = [row[0] for row in response]
+        return subclasses

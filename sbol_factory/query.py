@@ -2,6 +2,7 @@ import rdflib
 import os
 import posixpath
 from math import inf
+from sbol3 import SBOL_IDENTIFIED, SBOL_TOP_LEVEL
 
 class Query():
 
@@ -261,16 +262,45 @@ class Query():
         return class_uri in response
 
     def query_required_properties(self, class_uri):
+        inherited_required = []
+        if class_uri != SBOL_IDENTIFIED:
+            superclass_uri = self.query_superclass(class_uri)
+            inherited_required = self.query_required_properties(superclass_uri)
+        if class_uri == SBOL_TOP_LEVEL:
+            return ['identity']
+
         required = []
-        for cls in self.query_inheritance_hierarchy(class_uri):
-            properties = self.query_datatype_properties(cls)
-            properties += self.query_object_properties(cls)
-            for p in properties:
-                lb, ub = self.query_cardinality(p, cls)
-                if lb == 1:
-                    label = self.query_label(p)
-                    required.append(label)
-        return required
+        properties = self.query_datatype_properties(class_uri)
+        properties += self.query_object_properties(class_uri)
+        for p in properties:
+            lb, ub = self.query_cardinality(p, class_uri)
+            if lb == 1:
+                label = self.query_label(p)
+                required.append(label)
+        # Remove duplicate required arguments. This can happen if the ontology places
+        # a restriction on the same property in both the superclass and subclass.
+        required = [arg for arg in required if arg not in inherited_required]
+        # if len(required) > 1:
+        #     raise Exception(f'Required arguments must have an order specified.')
+        inherited_required.extend(required)
+        return inherited_required
+
+    # def query_required_properties(self, class_uri, required=[]):
+    #     if class_uri != SBOL_IDENTIFIED:
+    #         superclass_uri = self.query_superclass(class_uri)
+    #         required = self.query_required_properties(superclass_uri, required)
+    #     if class_uri == SBOL_TOP_LEVEL:
+    #         return ['identity']
+
+    #     properties = self.query_datatype_properties(class_uri)
+    #     properties += self.query_object_properties(class_uri)
+    #     for p in properties:
+    #         lb, ub = self.query_cardinality(p, class_uri)
+    #         if lb == 1:
+    #             label = self.query_label(p)
+    #             required.append(label)
+    #             print(label)
+    #     return required
 
     def query_inheritance_hierarchy(self, class_uri):
         query = '''

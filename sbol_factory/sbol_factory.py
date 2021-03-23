@@ -85,19 +85,34 @@ class SBOLFactory():
         log += '-' * (len(CLASS_NAME) - 2) + '\n'
 
         # Define constructor
-        def __init__(self, identity=None, type_uri=CLASS_URI):
-            Base = globals()[SUPERCLASS_NAME]
-            if SUPERCLASS_NAME == 'CombinatorialDerivation':
-                CombinatorialDerivation.__init__(self, identity, PYSBOL3_MISSING, type_uri=CLASS_URI)
-            else:
-                Base.__init__(self, identity=identity, type_uri=CLASS_URI)
-            self.type_uri = CLASS_URI
+        def __init__(self, *args, **kwargs):
+            # if SBOLFactory.query.is_top_level(CLASS_URI) and len(args):
+            #     pass
+            # else:
+            #     required_args = SBOLFactory.query.query_required_properties(CLASS_URI)
+            #     for arg in required_args:
+            #         if arg not in kwargs:
+            #             raise Exception(f'{arg} is a required argument' )
 
             # Object properties can be either compositional or associative
             property_uris = SBOLFactory.query.query_object_properties(CLASS_URI)
             compositional_properties = SBOLFactory.query.query_compositional_properties(CLASS_URI)
             associative_properties = [uri for uri in property_uris if uri not in
                                         compositional_properties]
+            datatype_properties = SBOLFactory.query.query_datatype_properties(CLASS_URI)
+            property_names = [SBOLFactory.query.query_label(uri) for uri in property_uris]
+            property_names.extend([SBOLFactory.query.query_label(uri) for uri in datatype_properties])
+            property_names = [name.replace(' ', '_') for name in property_names]
+
+            base_kwargs = {kw: val for kw, val in kwargs.items() if kw not in property_names}
+            base_kwargs['type_uri'] = CLASS_URI
+
+            if SUPERCLASS_NAME == 'CombinatorialDerivation':
+                CombinatorialDerivation.__init__(self, *args, **base_kwargs)
+            else:
+                Base = globals()[SUPERCLASS_NAME]
+                Base.__init__(self, *args, **base_kwargs)
+            self.type_uri = CLASS_URI
 
             # Initialize associative properties
             for property_uri in associative_properties:
@@ -134,13 +149,32 @@ class SBOLFactory():
                 elif datatypes[0] == 'http://www.w3.org/2001/XMLSchema#anyURI':
                     self.__dict__[property_name] = sbol.URIProperty(self, property_uri, lower_bound, upper_bound)
 
+            for kw, val in kwargs.items():
+                if kw == 'type_uri':
+                    continue
+                if kw in self.__dict__:
+                    try:
+                        self.__dict__[kw].set(val)
+                    except:
+                        pass
+                        # print(kw, val, type(self.__dict__[kw]))
+                        # raise
+
         # Instantiate metaclass
         attribute_dict = {}
         attribute_dict['__init__'] = __init__
         Class = type(CLASS_NAME, (globals()[SUPERCLASS_NAME],), attribute_dict)
         globals()[CLASS_NAME] = Class
         self.symbol_table[CLASS_NAME] = Class
-        sbol.Document.register_builder(str(CLASS_URI), Class)
+
+        def builder(identity, type_uri):
+            arg_names = SBOLFactory.query.query_required_properties(CLASS_URI)
+            kwargs = {arg.replace(' ', '_'): PYSBOL3_MISSING for arg in arg_names}
+            kwargs['identity'] = identity
+            kwargs['type_uri'] = type_uri
+            return Class(**kwargs)
+
+        sbol.Document.register_builder(str(CLASS_URI), builder)
 
         # Print out properties -- this is for logging only
         property_uris = SBOLFactory.query.query_object_properties(CLASS_URI)

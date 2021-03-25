@@ -2,13 +2,14 @@ from .query import Query
 from .shacl_validator import ShaclValidator
 
 import sbol3 as sbol
-from sbol3 import set_namespace, PYSBOL3_MISSING
+from sbol3 import set_namespace, PYSBOL3_MISSING, SBOL_TOP_LEVEL, SBOL_IDENTIFIED
 from sbol3 import CombinatorialDerivation, Component, Measure, VariableFeature
+
 # pySBOL extension classes are aliased because they are not present in SBOL-OWL
 from sbol3 import CustomTopLevel as TopLevel
 from sbol3 import CustomIdentified as Identified
-from math import inf
 
+from math import inf
 import rdflib
 import posixpath
 import os
@@ -107,12 +108,12 @@ class SBOLFactory():
             base_kwargs = {kw: val for kw, val in kwargs.items() if kw not in property_names}
             base_kwargs['type_uri'] = CLASS_URI
 
-            if SUPERCLASS_NAME == 'CombinatorialDerivation':
-                CombinatorialDerivation.__init__(self, *args, **base_kwargs)
+            Base = globals()[SUPERCLASS_NAME]
+            Base.__init__(self, *args, **base_kwargs)
+            if SBOLFactory.query.is_top_level(CLASS_URI):
+                self._rdf_types.append(SBOL_TOP_LEVEL)
             else:
-                Base = globals()[SUPERCLASS_NAME]
-                Base.__init__(self, *args, **base_kwargs)
-            self.type_uri = CLASS_URI
+                self._rdf_types.append(SBOL_IDENTIFIED)
 
             # Initialize associative properties
             for property_uri in associative_properties:
@@ -133,8 +134,6 @@ class SBOLFactory():
 
                 # Get the datatype of this property
                 datatypes = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)
-                if property_name == 'replicates':
-                    print(datatypes)
                 if len(datatypes) == 0:
                     continue
                 if len(datatypes) > 1:  # This might indicate an error in the ontology

@@ -8,7 +8,7 @@ setup(name='opil',
       description='Open Protocol Interface Language (OPIL)',
       version='1.0b3',
       install_requires=[
-            'sbol3==1.0a6',
+            'sbol3==1.0a8',
             'rdflib>=5.0.0',
             'rdflib-jsonld>=0.5.0',
             'sparqlwrapper>=1.8.5',

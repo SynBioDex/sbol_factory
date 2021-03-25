@@ -4,9 +4,9 @@ from setuptools import setup
 # the opil factory, which was conflicting with logging in
 # other modules
 
-setup(name='opil',
-      description='Open Protocol Interface Language (OPIL)',
-      version='1.0b3',
+setup(name='sbol_factory',
+      description='Ontology-driven data modeling',
+      version='1.0a2',
       install_requires=[
             'sbol3==1.0a8',
             'rdflib>=5.0.0',
@@ -17,8 +17,8 @@ setup(name='opil',
             'requests',
             'graphviz'
       ],
-      packages=['opil'],
-      package_data={'opil': ['rdf/*', 'sparql/*']},
+      packages=['sbol_factory'],
+      package_data={'sbol_factory': ['rdf/*', 'sparql/*']},
       include_package_data=True,
 #      entry_points = {
 #            'rdf.plugins.sparqleval': [

@@ -133,6 +133,8 @@ class SBOLFactory():
 
                 # Get the datatype of this property
                 datatypes = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)
+                if property_name == 'replicates':
+                    print(datatypes)
                 if len(datatypes) == 0:
                     continue
                 if len(datatypes) > 1:  # This might indicate an error in the ontology
@@ -142,7 +144,7 @@ class SBOLFactory():
                 lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
                 if datatypes[0] == 'http://www.w3.org/2001/XMLSchema#string':
                     self.__dict__[property_name] = sbol.TextProperty(self, property_uri, lower_bound, upper_bound)
-                elif datatypes[0] == 'http://www.w3.org/2001/XMLSchema#int':
+                elif datatypes[0] == 'http://www.w3.org/2001/XMLSchema#integer':
                     self.__dict__[property_name] = sbol.IntProperty(self, property_uri, lower_bound, upper_bound)                    
                 elif datatypes[0] == 'http://www.w3.org/2001/XMLSchema#boolean':
                     self.__dict__[property_name] = sbol.BooleanProperty(self, property_uri, lower_bound, upper_bound)

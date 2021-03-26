@@ -106,14 +106,15 @@ class SBOLFactory():
             property_names = [name.replace(' ', '_') for name in property_names]
 
             base_kwargs = {kw: val for kw, val in kwargs.items() if kw not in property_names}
-            base_kwargs['type_uri'] = CLASS_URI
-
+            if 'type_uri' not in base_kwargs:
+                base_kwargs['type_uri'] = CLASS_URI
             Base = globals()[SUPERCLASS_NAME]
             Base.__init__(self, *args, **base_kwargs)
-            if SBOLFactory.query.is_top_level(CLASS_URI):
-                self._rdf_types.append(SBOL_TOP_LEVEL)
-            else:
-                self._rdf_types.append(SBOL_IDENTIFIED)
+            if 'http://sbols.org/v3#' in superclass_uri and not superclass_uri == SBOL_TOP_LEVEL and not superclass_uri == SBOL_IDENTIFIED:
+                if SBOLFactory.query.is_top_level(CLASS_URI):
+                    self._rdf_types.append(SBOL_TOP_LEVEL)
+                else:
+                    self._rdf_types.append(SBOL_IDENTIFIED)
 
             # Initialize associative properties
             for property_uri in associative_properties:

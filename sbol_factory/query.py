@@ -218,14 +218,22 @@ class Query():
             return datatypes
         # If no restrictions are found, then search for ranges.
         # Ranges are more permissive, so more than one can range for a property can be found
+        # query = '''
+        #     SELECT distinct ?datatype
+        #     WHERE 
+        #     {{
+        #         <{}> rdfs:domain <{}> .
+        #         <{}> rdfs:range ?datatype 
+        #     }}
+        #     '''.format(property_uri, class_uri, property_uri)   
         query = '''
             SELECT distinct ?datatype
             WHERE 
             {{
-                <{}> rdfs:domain <{}> .
                 <{}> rdfs:range ?datatype 
             }}
-            '''.format(property_uri, class_uri, property_uri)    
+            '''.format(property_uri)   
+
         response = self.graph.query(query)
         response = [str(row[0]) for row in response]
         if len(datatypes) > 1:

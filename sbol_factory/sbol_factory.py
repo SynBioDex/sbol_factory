@@ -87,10 +87,11 @@ class SBOLFactory():
 
         # Define constructor
         def __init__(self, *args, **kwargs):
-            # if SBOLFactory.query.is_top_level(CLASS_URI) and len(args):
-            #     pass
-            # else:
-            #     required_args = SBOLFactory.query.query_required_properties(CLASS_URI)
+
+            # required_args = SBOLFactory.query.query_required_properties(CLASS_URI)
+            # if len(args) != len(required_args):
+            #     raise('TypeError: method() takes exactly 1 positional argument (2 given)')
+
             #     for arg in required_args:
             #         if arg not in kwargs:
             #             raise Exception(f'{arg} is a required argument' )
@@ -104,7 +105,6 @@ class SBOLFactory():
             property_names = [SBOLFactory.query.query_label(uri) for uri in property_uris]
             property_names.extend([SBOLFactory.query.query_label(uri) for uri in datatype_properties])
             property_names = [name.replace(' ', '_') for name in property_names]
-
             base_kwargs = {kw: val for kw, val in kwargs.items() if kw not in property_names}
             if 'type_uri' not in base_kwargs:
                 base_kwargs['type_uri'] = CLASS_URI
@@ -132,7 +132,6 @@ class SBOLFactory():
             property_uris = SBOLFactory.query.query_datatype_properties(CLASS_URI)
             for property_uri in property_uris:
                 property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
-
                 # Get the datatype of this property
                 datatypes = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)
                 if len(datatypes) == 0:

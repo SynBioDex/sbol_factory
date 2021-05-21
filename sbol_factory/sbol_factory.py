@@ -161,9 +161,14 @@ class SBOLFactory():
                         # print(kw, val, type(self.__dict__[kw]))
                         # raise
 
+        def accept(self, visitor):
+            visitor_method = f'visit_{CLASS_NAME}'.lower()
+            getattr(visitor, visitor_method)(self)
+
         # Instantiate metaclass
         attribute_dict = {}
         attribute_dict['__init__'] = __init__
+        attribute_dict['accept'] = accept
         Class = type(CLASS_NAME, (globals()[SUPERCLASS_NAME],), attribute_dict)
         globals()[CLASS_NAME] = Class
         self.symbol_table[CLASS_NAME] = Class

@@ -6,6 +6,8 @@ from sbol3 import SBOL_IDENTIFIED, SBOL_TOP_LEVEL
 
 class Query():
 
+    graph = rdflib.Graph()
+    graph.parse(posixpath.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbol3.ttl'), format ='ttl')
     OWL = rdflib.URIRef('http://www.w3.org/2002/07/owl#')
     RDF = rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
     SBOL = rdflib.URIRef('http://sbols.org/v2#')
@@ -13,19 +15,17 @@ class Query():
     RDFS = rdflib.URIRef('http://www.w3.org/2000/01/rdf-schema#')
     XSD = rdflib.URIRef('http://www.w3.org/2001/XMLSchema#')
     OM = rdflib.URIRef('http://www.ontology-of-units-of-measure.org/resource/om-2/')
+    graph.namespace_manager.bind('sbol', SBOL)
+    graph.namespace_manager.bind('opil', OPIL)
+    graph.namespace_manager.bind('owl', OWL)
+    graph.namespace_manager.bind('rdfs', RDFS)
+    graph.namespace_manager.bind('rdf', RDF)
+    graph.namespace_manager.bind('xsd', XSD)
+    graph.namespace_manager.bind('om', OM)
 
     def __init__(self, ontology_path):
-        graph = rdflib.Graph()
-        graph.parse(ontology_path, format=rdflib.util.guess_format(ontology_path))
-        graph.parse(posixpath.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbol3.ttl'), format ='ttl')
-        graph.namespace_manager.bind('sbol', Query.SBOL)
-        graph.namespace_manager.bind('opil', Query.OPIL)
-        graph.namespace_manager.bind('owl', Query.OWL)
-        graph.namespace_manager.bind('rdfs', Query.RDFS)
-        graph.namespace_manager.bind('rdf', Query.RDF)
-        graph.namespace_manager.bind('xsd', Query.XSD)
-        graph.namespace_manager.bind('om', Query.OM)
-        self.graph = graph
+        Query.graph.parse(ontology_path, format=rdflib.util.guess_format(ontology_path))
+        self.graph = Query.graph
 
     def query_base_class(self, cls):
         try:
@@ -80,6 +80,8 @@ class Query():
         if len(response) == 0:
             raise Exception('{} has no superclass'.format(subclass))
         if len(response) > 1:
+            for r in response:
+                print(str(r[0]))
             raise Exception('{} has more than one superclass'.format(subclass))
         for row in response:
             superclass = str(row[0])

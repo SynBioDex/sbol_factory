@@ -173,8 +173,9 @@ class SBOLFactory():
         globals()[CLASS_NAME] = Class
         self.symbol_table[CLASS_NAME] = Class
 
+        arg_names = SBOLFactory.query.query_required_properties(CLASS_URI)  # moved outside of builder for speed
+
         def builder(identity, type_uri):
-            arg_names = SBOLFactory.query.query_required_properties(CLASS_URI)
             kwargs = {arg.replace(' ', '_'): PYSBOL3_MISSING for arg in arg_names}
             kwargs['identity'] = identity
             kwargs['type_uri'] = type_uri

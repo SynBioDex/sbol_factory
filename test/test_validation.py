@@ -1,16 +1,6 @@
-import tempfile
-import os
 import unittest
-import filecmp
 import sbol3
-from sbol_factory import SBOLFactory, UMLFactory
-import posixpath
-
-__factory__ = SBOLFactory(locals(),
-                          posixpath.join(os.path.dirname(os.path.realpath(__file__)),
-                                         'test_files', 'test-ontology.ttl'),
-                          'http://bioprotocols.org/uml#')
-__umlfactory__ = UMLFactory(__factory__)
+import test_files
 
 class TestValidation(unittest.TestCase):
     def test_valid_document(self):
@@ -18,7 +8,7 @@ class TestValidation(unittest.TestCase):
         doc = sbol3.Document()
         sbol3.set_namespace('https://example.org/test')
         # Add a few empty but valid elements
-        doc.add(Behavior('Provision'))
+        doc.add(test_files.Behavior('Provision'))
         doc.add(sbol3.Sequence('genome'))
         doc.add(sbol3.Component('water',sbol3.SBO_SIMPLE_CHEMICAL))
         # confirm validity
@@ -30,7 +20,7 @@ class TestValidation(unittest.TestCase):
         doc = sbol3.Document()
         sbol3.set_namespace('https://test.org/')
         # Add a few empty but valid elements
-        doc.add(Behavior('Provision'))
+        doc.add(test_files.Behavior('Provision'))
         doc.add(sbol3.Sequence('genome'))
         doc.add(sbol3.Component('water',{})) # Add an element that's missing a required property
         # confirm non-validity
@@ -45,9 +35,9 @@ class TestValidation(unittest.TestCase):
         doc = sbol3.Document()
         sbol3.set_namespace('https://test.org/')
         # Add a few empty but valid elements
-        b = Behavior('Provision')
+        b = test_files.Behavior('Provision')
         doc.add(b)
-        b.parameters.append(Parameter(name='spec'))
+        b.parameters.append(test_files.Parameter(name='spec'))
         doc.add(sbol3.Sequence('genome'))
         doc.add(sbol3.Component('water',sbol3.SBO_SIMPLE_CHEMICAL))
         # confirm non-validity

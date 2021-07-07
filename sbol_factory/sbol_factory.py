@@ -85,62 +85,60 @@ class SBOLFactory():
         log += f'\n{CLASS_NAME}\n'
         log += '-' * (len(CLASS_NAME) - 2) + '\n'
 
+        # Collect property information for constructor, cached outside for speed
+        # Object properties can be either compositional or associative
+        property_uris = SBOLFactory.query.query_object_properties(CLASS_URI)
+        compositional_properties = SBOLFactory.query.query_compositional_properties(CLASS_URI)
+        associative_properties = [uri for uri in property_uris if uri not in
+                                  compositional_properties]
+        datatype_properties = SBOLFactory.query.query_datatype_properties(CLASS_URI)
+        property_names = [SBOLFactory.query.query_label(uri) for uri in property_uris]
+        property_names.extend([SBOLFactory.query.query_label(uri) for uri in datatype_properties])
+        property_names = [name.replace(' ', '_') for name in property_names]
+        class_is_top_level = SBOLFactory.query.is_top_level(CLASS_URI)
+        all_property_uris = property_uris + datatype_properties
+        property_uri_to_name = {uri: SBOLFactory.query.query_label(uri).replace(' ', '_') for uri in all_property_uris}
+        property_cardinalities = {uri: SBOLFactory.query.query_cardinality(uri, CLASS_URI) for uri in all_property_uris}
+        property_datatypes = {uri: SBOLFactory.query.query_property_datatype(uri, CLASS_URI) for uri in datatype_properties}
+
         # Define constructor
         def __init__(self, *args, **kwargs):
-
-            # required_args = SBOLFactory.query.query_required_properties(CLASS_URI)
-            # if len(args) != len(required_args):
-            #     raise('TypeError: method() takes exactly 1 positional argument (2 given)')
-
-            #     for arg in required_args:
-            #         if arg not in kwargs:
-            #             raise Exception(f'{arg} is a required argument' )
-
-            # Object properties can be either compositional or associative
-            property_uris = SBOLFactory.query.query_object_properties(CLASS_URI)
-            compositional_properties = SBOLFactory.query.query_compositional_properties(CLASS_URI)
-            associative_properties = [uri for uri in property_uris if uri not in
-                                        compositional_properties]
-            datatype_properties = SBOLFactory.query.query_datatype_properties(CLASS_URI)
-            property_names = [SBOLFactory.query.query_label(uri) for uri in property_uris]
-            property_names.extend([SBOLFactory.query.query_label(uri) for uri in datatype_properties])
-            property_names = [name.replace(' ', '_') for name in property_names]
             base_kwargs = {kw: val for kw, val in kwargs.items() if kw not in property_names}
             if 'type_uri' not in base_kwargs:
                 base_kwargs['type_uri'] = CLASS_URI
             Base = globals()[SUPERCLASS_NAME]
             Base.__init__(self, *args, **base_kwargs)
             if 'http://sbols.org/v3#' in superclass_uri and not superclass_uri == SBOL_TOP_LEVEL and not superclass_uri == SBOL_IDENTIFIED:
-                if SBOLFactory.query.is_top_level(CLASS_URI):
+                if class_is_top_level:
                     self._rdf_types.append(SBOL_TOP_LEVEL)
                 else:
                     self._rdf_types.append(SBOL_IDENTIFIED)
 
             # Initialize associative properties
             for property_uri in associative_properties:
-                property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
-                lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
+                property_name = property_uri_to_name[property_uri]
+                lower_bound, upper_bound = property_cardinalities[property_uri]
                 self.__dict__[property_name] = sbol.ReferencedObject(self, property_uri, lower_bound, upper_bound)
 
             # Initialize compositional properties
             for property_uri in compositional_properties:
-                property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
-                lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
+                property_name = property_uri_to_name[property_uri]
+                lower_bound, upper_bound = property_cardinalities[property_uri]
                 self.__dict__[property_name] = sbol.OwnedObject(self, property_uri, lower_bound, upper_bound)
 
             # Initialize datatype properties
-            property_uris = SBOLFactory.query.query_datatype_properties(CLASS_URI)
-            for property_uri in property_uris:
-                property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
+            for property_uri in datatype_properties:
+                # TODO: Cache query information outside of constructor
+                property_name = property_uri_to_name[property_uri]
                 # Get the datatype of this property
-                datatypes = SBOLFactory.query.query_property_datatype(property_uri, CLASS_URI)
+                datatypes = property_datatypes[property_uri]
                 if len(datatypes) == 0:
                     continue
                 if len(datatypes) > 1:  # This might indicate an error in the ontology
                     raise
 
                 # Get the cardinality of this datatype property
-                lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
+                lower_bound, upper_bound = property_cardinalities[property_uri]
                 if datatypes[0] == 'http://www.w3.org/2001/XMLSchema#string':
                     self.__dict__[property_name] = sbol.TextProperty(self, property_uri, lower_bound, upper_bound)
                 elif datatypes[0] == 'http://www.w3.org/2001/XMLSchema#integer':
@@ -173,9 +171,10 @@ class SBOLFactory():
         globals()[CLASS_NAME] = Class
         self.symbol_table[CLASS_NAME] = Class
 
+        arg_names = SBOLFactory.query.query_required_properties(CLASS_URI)  # moved outside of builder for speed
+        kwargs = {arg.replace(' ', '_'): PYSBOL3_MISSING for arg in arg_names}
+
         def builder(identity, type_uri):
-            arg_names = SBOLFactory.query.query_required_properties(CLASS_URI)
-            kwargs = {arg.replace(' ', '_'): PYSBOL3_MISSING for arg in arg_names}
             kwargs['identity'] = identity
             kwargs['type_uri'] = type_uri
             return Class(**kwargs)

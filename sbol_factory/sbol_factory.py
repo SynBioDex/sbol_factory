@@ -147,6 +147,8 @@ class SBOLFactory():
                     self.__dict__[property_name] = sbol.BooleanProperty(self, property_uri, lower_bound, upper_bound)
                 elif datatypes[0] == 'http://www.w3.org/2001/XMLSchema#anyURI':
                     self.__dict__[property_name] = sbol.URIProperty(self, property_uri, lower_bound, upper_bound)
+                elif datatypes[0] == 'http://www.w3.org/2001/XMLSchema#dateTime':
+                    self.__dict__[property_name] = sbol.DateTimeProperty(self, property_uri, lower_bound, upper_bound)
 
             for kw, val in kwargs.items():
                 if kw == 'type_uri':

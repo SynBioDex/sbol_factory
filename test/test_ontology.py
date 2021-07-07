@@ -4,6 +4,8 @@ import unittest
 import filecmp
 import sbol3
 import test_files
+from sbol_factory import SBOLFactory
+
 
 # Functions monkey-patched into classes from the test ontology for user in the construction test
 def behavior_add_parameter(self, name: str, param_type: str, direction: str, optional: bool = False):
@@ -91,6 +93,20 @@ class TestOntologyActions(unittest.TestCase):
         assert filecmp.cmp(temp_name, original_file), "Files are not identical"
         print('Written out file identical with original file')
 
+
+class TestDateTimeProperty(unittest.TestCase):
+
+    def test_date_time(self):
+        __factory__ = SBOLFactory(locals(),
+                                  os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-datetime.ttl'),
+                                 'http://bioprotocols.org/paml#',
+                                 True)
+        self.assertTrue('BehaviorExecution' in locals())
+        sbol3.set_namespace('https://example.org/test')
+        b = locals()['BehaviorExecution']('behavior_execution')
+        b.startedAt = '2017-01-01T00:00:00'
+        print('***' + b.startedAt.isoformat() + '***')
+        self.assertTrue(b.startedAt.isoformat() == '2017-01-01T00:00:00')      
 
 if __name__ == '__main__':
     unittest.main()

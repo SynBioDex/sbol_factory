@@ -1,0 +1,22 @@
+@prefix : <http://bioprotocols.org/paml#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sbol: <http://sbols.org/v3#> .
+@base <http://bioprotocols.org/paml#> .
+
+:BehaviorExecution rdf:type owl:Class ;
+        rdfs:comment "Record of the operation of a UML Behavior, real or simulated" ;
+        rdfs:subClassOf sbol:TopLevel ,
+            [ rdf:type owl:Restriction ;
+              owl:onProperty :startedAt ;
+              owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+              owl:maxCardinality "1"^^xsd:nonNegativeInteger ;
+            ] . 
+
+:startedAt rdf:type owl:DatatypeProperty ;
+        rdfs:domain :BehaviorExecution ;
+        rdfs:range xsd:dateTime ;
+        rdfs:label "startedAt" .
+

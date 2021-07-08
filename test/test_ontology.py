@@ -105,8 +105,17 @@ class TestDateTimeProperty(unittest.TestCase):
         sbol3.set_namespace('https://example.org/test')
         b = locals()['BehaviorExecution']('behavior_execution')
         b.startedAt = '2017-01-01T00:00:00'
-        print('***' + b.startedAt.isoformat() + '***')
         self.assertTrue(b.startedAt.isoformat() == '2017-01-01T00:00:00')      
+
+    def test_inheritance_from_provo_classes(self):
+        __factory__ = SBOLFactory(locals(),
+                                  os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-provo.ttl'),
+                                 'http://bioprotocols.org/paml#',
+                                 True)
+        sbol3.set_namespace('https://example.org/test')
+        BehaviorExecution = locals()['BehaviorExecution']
+        print(BehaviorExecution.__class__.__bases__)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -97,6 +97,7 @@ class TestOntologyActions(unittest.TestCase):
 class TestDateTimeProperty(unittest.TestCase):
 
     def test_date_time(self):
+        SBOLFactory.clear()
         __factory__ = SBOLFactory(locals(),
                                   os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-datetime.ttl'),
                                  'http://bioprotocols.org/paml#',
@@ -108,11 +109,12 @@ class TestDateTimeProperty(unittest.TestCase):
         self.assertTrue(b.startedAt.isoformat() == '2017-01-01T00:00:00')      
 
     def test_inheritance_from_provo_classes(self):
+        SBOLFactory.clear()
         __factory__ = SBOLFactory(locals(),
                                   os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-provo.ttl'),
                                  'http://bioprotocols.org/paml#',
                                  True)
-        sbol3.set_namespace('https://example.org/test')
+        b = locals()['BehaviorExecution']('behavior_execution')
         BehaviorExecution = locals()['BehaviorExecution']
         print(BehaviorExecution.__class__.__bases__)
 

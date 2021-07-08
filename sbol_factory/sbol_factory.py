@@ -206,6 +206,11 @@ class SBOLFactory():
             log += f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n'
         return log
 
+    @staticmethod
+    def clear():
+        Query.graph = None
+
+
 class UMLFactory:
 
     def __init__(self, factory):

@@ -30,6 +30,10 @@ test_files.Behavior.add_output = behavior_add_output  # Add to class via monkey 
 
 
 class TestOntologyActions(unittest.TestCase):
+
+    def tearDown(self):
+        SBOLFactory.clear()
+
     def test_build_with_ontology(self):
         #############################################
         # Set up the document
@@ -96,17 +100,28 @@ class TestOntologyActions(unittest.TestCase):
 
 class TestDateTimeProperty(unittest.TestCase):
 
+    def setUp(self):
+        SBOLFactory.clear()
+
+    def tearDown(self):
+        SBOLFactory.clear()
+
     def test_date_time(self):
-        __factory__ = SBOLFactory(locals(),
-                                  os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-datetime.ttl'),
-                                 'http://bioprotocols.org/paml#',
-                                 True)
-        self.assertTrue('BehaviorExecution' in locals())
+        paml = SBOLFactory('paml',
+                           os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-datetime.ttl'),
+                           'http://bioprotocols.org/paml#')
+        self.assertTrue('BehaviorExecution' in paml.__dict__)
         sbol3.set_namespace('https://example.org/test')
-        b = locals()['BehaviorExecution']('behavior_execution')
+        b = paml.BehaviorExecution('foo')
         b.startedAt = '2017-01-01T00:00:00'
-        print('***' + b.startedAt.isoformat() + '***')
-        self.assertTrue(b.startedAt.isoformat() == '2017-01-01T00:00:00')      
+        self.assertTrue(b.startedAt.isoformat() == '2017-01-01T00:00:00')
+
+    def test_inheritance_from_provo_classes(self):
+        paml = SBOLFactory('paml',
+                    os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-provo.ttl'),
+                    'http://bioprotocols.org/paml#')
+        self.assertTrue('BehaviorExecution' in paml.__dict__)
+        self.assertTrue(sbol3.Activity in paml.BehaviorExecution.mro()) 
 
 if __name__ == '__main__':
     unittest.main()

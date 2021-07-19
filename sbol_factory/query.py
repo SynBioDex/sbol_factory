@@ -2,12 +2,11 @@ import rdflib
 import os
 import posixpath
 from math import inf
-from sbol3 import SBOL_IDENTIFIED, SBOL_TOP_LEVEL
+from sbol3 import SBOL_IDENTIFIED, SBOL_TOP_LEVEL, PROV_ACTIVITY, PROV_PLAN, PROV_AGENT
 
 class Query():
 
-    graph = rdflib.Graph()
-    graph.parse(posixpath.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbol3.ttl'), format ='ttl')
+    graph = None
     OWL = rdflib.URIRef('http://www.w3.org/2002/07/owl#')
     RDF = rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
     SBOL = rdflib.URIRef('http://sbols.org/v2#')
@@ -15,15 +14,22 @@ class Query():
     RDFS = rdflib.URIRef('http://www.w3.org/2000/01/rdf-schema#')
     XSD = rdflib.URIRef('http://www.w3.org/2001/XMLSchema#')
     OM = rdflib.URIRef('http://www.ontology-of-units-of-measure.org/resource/om-2/')
-    graph.namespace_manager.bind('sbol', SBOL)
-    graph.namespace_manager.bind('opil', OPIL)
-    graph.namespace_manager.bind('owl', OWL)
-    graph.namespace_manager.bind('rdfs', RDFS)
-    graph.namespace_manager.bind('rdf', RDF)
-    graph.namespace_manager.bind('xsd', XSD)
-    graph.namespace_manager.bind('om', OM)
+    PROVO = rdflib.URIRef('http://www.w3.org/ns/prov#')
 
     def __init__(self, ontology_path):
+        if not Query.graph:
+            Query.graph = rdflib.Graph()
+            Query.graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbol3.ttl'), format ='ttl')
+            Query.graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/prov-o.owl'), format ='xml')
+            Query.graph.namespace_manager.bind('sbol', Query.SBOL)
+            Query.graph.namespace_manager.bind('opil', Query.OPIL)
+            Query.graph.namespace_manager.bind('owl', Query.OWL)
+            Query.graph.namespace_manager.bind('rdfs', Query.RDFS)
+            Query.graph.namespace_manager.bind('rdf', Query.RDF)
+            Query.graph.namespace_manager.bind('xsd', Query.XSD)
+            Query.graph.namespace_manager.bind('om', Query.OM)
+            Query.graph.namespace_manager.bind('prov', Query.PROVO)
+
         Query.graph.parse(ontology_path, format=rdflib.util.guess_format(ontology_path))
         self.graph = Query.graph
 
@@ -81,8 +87,8 @@ class Query():
             raise Exception('{} has no superclass'.format(subclass))
         if len(response) > 1:
             for r in response:
-                print(str(r[0]))
-            raise Exception('{} has more than one superclass'.format(subclass))
+                print(r)
+            raise Exception('{} has more than one {} superclass {}'.format(subclass, response, len(response)))
         for row in response:
             superclass = str(row[0])
         return superclass
@@ -273,10 +279,13 @@ class Query():
 
     def query_required_properties(self, class_uri):
         inherited_required = []
-        if class_uri != SBOL_IDENTIFIED:
+
+        # Currently we cannot perform inference on PROV-O classes.
+        # See #22
+        if class_uri != SBOL_IDENTIFIED and Query.PROVO not in class_uri:
             superclass_uri = self.query_superclass(class_uri)
             inherited_required = self.query_required_properties(superclass_uri)
-        if class_uri == SBOL_TOP_LEVEL:
+        if class_uri == SBOL_TOP_LEVEL or class_uri == PROV_ACTIVITY or class_uri == PROV_AGENT or class_uri == PROV_PLAN:
             return ['identity']
 
         required = []

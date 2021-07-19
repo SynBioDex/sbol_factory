@@ -76,7 +76,7 @@ class SBOLFactory():
     # Prefixes are used to automatically generate module names
     namespace_to_prefix = {}
 
-    def __new__(cls, module_scope, ontology_path, ontology_namespace, verbose=False):
+    def __new__(cls, module_name, ontology_path, ontology_namespace, verbose=False):
         SBOLFactory.graph.parse(ontology_path, format=rdflib.util.guess_format(ontology_path))
         for prefix, ns in SBOLFactory.graph.namespaces():
             SBOLFactory.namespace_to_prefix[str(ns)] = prefix
@@ -84,8 +84,6 @@ class SBOLFactory():
 
         # Use ontology prefix as module name
         ontology_namespace = ontology_namespace
-        module_name = SBOLFactory.namespace_to_prefix[ontology_namespace] if ontology_namespace in SBOLFactory.namespace_to_prefix else ''
-        print('Creating ' + module_name + ' from ' + ontology_path)
         SBOLFactory.query = Query(ontology_path)
         symbol_table = {}
         for class_uri in SBOLFactory.query.query_classes():
@@ -98,14 +96,7 @@ class SBOLFactory():
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         sys.modules[module_name] = module
-
-        for symbol, cls in symbol_table.items():
-            print('Adding ' + str(cls) + ' to ' + module_name)
-            module_scope[symbol] = cls
-        print(module_scope)
-        if 'BehaviorExecution' in module_scope:
-            print('BehaviorException: ' + module_scope[symbol])
-        return module, module_scope
+        return module
 
 
     def __init__(self, namespace, module_scope, verbose):
@@ -126,10 +117,8 @@ class SBOLFactory():
 
         CLASS_URI = class_uri
         CLASS_NAME = sbol.utils.parse_class_name(class_uri)
-        print('Generating ' + CLASS_NAME)
 
         if SBOLFactory.get_constructor(class_uri, symbol_table):  # Abort if the class has already been generated
-            print(CLASS_NAME + ' has already been generated')
             return symbol_table
 
         Super = SBOLFactory.get_constructor(superclass_uri, symbol_table)
@@ -310,7 +299,6 @@ class SBOLFactory():
             if '__loader__' in module.__dict__ and type(module.__loader__) is OntologyLoader:
                 ontology_modules.append(name)
         for name in ontology_modules:
-            print('Deleting ' + name)
             del sys.modules[name]
 
     @staticmethod

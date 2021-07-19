@@ -6,6 +6,12 @@ from sbol_factory import SBOLFactory
 
 class TestOntologyToModule(unittest.TestCase):
 
+    def setUp(self):
+        SBOLFactory.clear()
+
+    def tearDown(self):
+        SBOLFactory.clear()
+
     def test_ontology_to_module(self):
         SBOLFactory('uml',
                      os.path.join(os.path.dirname(os.path.realpath(__file__)),

@@ -1,5 +1,6 @@
 from .query import Query
 from .shacl_validator import ShaclValidator
+from .loader import OntologyLoader
 
 import sbol3 as sbol
 from sbol3 import set_namespace, PYSBOL3_MISSING, SBOL_TOP_LEVEL, SBOL_IDENTIFIED
@@ -13,9 +14,15 @@ from math import inf
 import rdflib
 import posixpath
 import os
+import sys
 import argparse
 import graphviz
-#import logging
+import importlib
+
+
+SBOL = 'http://sbols.org/v3#'
+OM = 'http://www.ontology-of-units-of-measure.org/resource/om-2/'
+PROVO = 'http://www.w3.org/ns/prov#'
 
 
 # Expose Document through the OPIL API
@@ -54,32 +61,80 @@ class ValidationReport():
 
 class SBOLFactory():
 
-    query = None
+    graph = rdflib.Graph()
+    graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbol3.ttl'), format ='ttl')
+    graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/prov-o.owl'), format ='xml')
+    graph.namespace_manager.bind('sbol', Query.SBOL)
+    graph.namespace_manager.bind('opil', Query.OPIL)
+    graph.namespace_manager.bind('owl', Query.OWL)
+    graph.namespace_manager.bind('rdfs', Query.RDFS)
+    graph.namespace_manager.bind('rdf', Query.RDF)
+    graph.namespace_manager.bind('xsd', Query.XSD)
+    graph.namespace_manager.bind('om', Query.OM)
+    graph.namespace_manager.bind('prov', Query.PROVO)
 
-    def __init__(self, module_scope, ontology_path, ontology_namespace, verbose=False):
+    # Prefixes are used to automatically generate module names
+    namespace_to_prefix = {}
+
+    def __new__(cls, module_scope, ontology_path, ontology_namespace, verbose=False):
+        SBOLFactory.graph.parse(ontology_path, format=rdflib.util.guess_format(ontology_path))
+        for prefix, ns in SBOLFactory.graph.namespaces():
+            SBOLFactory.namespace_to_prefix[str(ns)] = prefix
+            # TODO: handle namespace with conflicting prefixes
+
+        # Use ontology prefix as module name
+        ontology_namespace = ontology_namespace
+        module_name = SBOLFactory.namespace_to_prefix[ontology_namespace] if ontology_namespace in SBOLFactory.namespace_to_prefix else ''
+        print('Creating ' + module_name + ' from ' + ontology_path)
+        SBOLFactory.query = Query(ontology_path)
+        symbol_table = {}
+        for class_uri in SBOLFactory.query.query_classes():
+            symbol_table = SBOLFactory.generate(class_uri, symbol_table, ontology_namespace)
+
+        spec = importlib.util.spec_from_loader(
+            module_name,
+            OntologyLoader(symbol_table)
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sys.modules[module_name] = module
+
+        for symbol, cls in symbol_table.items():
+            print('Adding ' + str(cls) + ' to ' + module_name)
+            module_scope[symbol] = cls
+        print(module_scope)
+        if 'BehaviorExecution' in module_scope:
+            print('BehaviorException: ' + module_scope[symbol])
+        return module, module_scope
+
+
+    def __init__(self, namespace, module_scope, verbose):
         self.namespace = rdflib.URIRef(ontology_namespace)
+        self.graph = SBOLFactory.graph
         self.symbol_table = module_scope
         self.doc = ''
-        docstring = ''
-        SBOLFactory.query = Query(ontology_path)
-        for class_uri in SBOLFactory.query.query_classes():
-            docstring += self.generate(class_uri)
-        if verbose:
-            print(docstring)
 
-    def generate(self, class_uri, log=''):
+    @staticmethod
+    def generate(class_uri, symbol_table, ontology_namespace):
+        log = ''
+        if ontology_namespace not in class_uri: 
+            return symbol_table
 
-        if self.namespace not in class_uri: 
-            return ''
+        # Recurse into superclass
         superclass_uri = SBOLFactory.query.query_superclass(class_uri)
-        log += self.generate(superclass_uri, log)  # Recurse into superclasses
+        symbol_table = SBOLFactory.generate(superclass_uri, symbol_table, ontology_namespace)
 
         CLASS_URI = class_uri
         CLASS_NAME = sbol.utils.parse_class_name(class_uri)
-        SUPERCLASS_NAME = sbol.utils.parse_class_name(superclass_uri)
+        print('Generating ' + CLASS_NAME)
 
-        if CLASS_NAME in globals().keys():  # Abort if the class has already been generated
-            return ''
+        if SBOLFactory.get_constructor(class_uri, symbol_table):  # Abort if the class has already been generated
+            print(CLASS_NAME + ' has already been generated')
+            return symbol_table
+
+        Super = SBOLFactory.get_constructor(superclass_uri, symbol_table)
+        if not Super:
+            raise Exception('Superclass {} does not have a constructor'.format(superclass_uri))
 
         #Logging
         log += f'\n{CLASS_NAME}\n'
@@ -101,13 +156,14 @@ class SBOLFactory():
         property_cardinalities = {uri: SBOLFactory.query.query_cardinality(uri, CLASS_URI) for uri in all_property_uris}
         property_datatypes = {uri: SBOLFactory.query.query_property_datatype(uri, CLASS_URI) for uri in datatype_properties}
 
+
+
         # Define constructor
         def __init__(self, *args, **kwargs):
             base_kwargs = {kw: val for kw, val in kwargs.items() if kw not in property_names}
             if 'type_uri' not in base_kwargs:
                 base_kwargs['type_uri'] = CLASS_URI
-            Base = globals()[SUPERCLASS_NAME]
-            Base.__init__(self, *args, **base_kwargs)
+            Super.__init__(self, *args, **base_kwargs)
             if 'http://sbols.org/v3#' in superclass_uri and not superclass_uri == SBOL_TOP_LEVEL and not superclass_uri == SBOL_IDENTIFIED:
                 if class_is_top_level:
                     self._rdf_types.append(SBOL_TOP_LEVEL)
@@ -169,10 +225,11 @@ class SBOLFactory():
         attribute_dict = {}
         attribute_dict['__init__'] = __init__
         attribute_dict['accept'] = accept
-        Class = type(CLASS_NAME, (globals()[SUPERCLASS_NAME],), attribute_dict)
-        globals()[CLASS_NAME] = Class
-        self.symbol_table[CLASS_NAME] = Class
+        Class = type(CLASS_NAME, (Super,), attribute_dict)
 
+        #globals()[CLASS_NAME] = Class
+        #self.symbol_table[CLASS_NAME] = Class
+        symbol_table[CLASS_NAME] = Class
         arg_names = SBOLFactory.query.query_required_properties(CLASS_URI)  # moved outside of builder for speed
         kwargs = {arg.replace(' ', '_'): PYSBOL3_MISSING for arg in arg_names}
 
@@ -204,18 +261,66 @@ class SBOLFactory():
                 datatype = None
             lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)            
             log += f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n'
-        return log
+        return symbol_table
+
+    @staticmethod
+    def get_constructor(class_uri, symbol_table):
+
+        if class_uri == SBOL_IDENTIFIED:
+            return sbol.CustomIdentified
+        if class_uri == SBOL_TOP_LEVEL:
+            return sbol.CustomTopLevel
+
+        # First look in the module we are generating
+        class_name = sbol.utils.parse_class_name(class_uri)
+        if class_name in symbol_table:
+            return symbol_table[class_name]
+
+        # Look in submodule
+        namespace = None
+        if '#' in class_uri:
+            namespace = class_uri[:class_uri.rindex('#')+1]
+        elif '/' in class_uri:
+            namespace = class_uri[:class_uri.rindex('/')+1]
+        else:
+            raise ValueError(f'Cannot parse namespace from {class_uri}. URI must use either / or # as a delimiter.')
+
+        # Look in the sbol module 
+        if namespace == SBOL or namespace == PROVO or namespace == OM:
+            return sbol.__dict__[class_name]
+
+        # Look in other ontologies
+        module_name = SBOLFactory.namespace_to_prefix[namespace]
+        if module_name in sys.modules and class_name in sys.modules[module_name].__dict__:
+            return sys.modules[module_name].__dict__[class_name]
+
+        #if class_name in globals():
+        #    if class_name == 'BehaviorExecution':
+        #        print('BehaviorExecution in globals')
+        #    return globals()[class_name]
+        return None
+
+
 
     @staticmethod
     def clear():
         Query.graph = None
+        ontology_modules = []
+        for name, module in sys.modules.items():
+            if '__loader__' in module.__dict__ and type(module.__loader__) is OntologyLoader:
+                ontology_modules.append(name)
+        for name in ontology_modules:
+            print('Deleting ' + name)
+            del sys.modules[name]
 
+    @staticmethod
+    def delete(symbol):
+        del globals()[symbol]
 
 class UMLFactory:
 
     def __init__(self, factory):
         self.factory = factory
-        SBOLFactory.query = factory.query
 
     def generate(self, output_path):
         if not os.path.exists(output_path):

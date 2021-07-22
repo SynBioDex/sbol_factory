@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(name='sbol_factory',
       description='Ontology-driven data modeling',
-      version='1.0a5',
+      version='1.0a6',
       install_requires=[
             'sbol3>=1.0a10',
             'rdflib>=5.0.0',

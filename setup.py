@@ -9,7 +9,7 @@ setup(name='sbol_factory',
       version='1.0a6',
       install_requires=[
             'sbol3>=1.0a10',
-            'rdflib>=5.0.0',
+            'rdflib==5.0.0',
             'rdflib-jsonld>=0.5.0',
             'sparqlwrapper>=1.8.5',
             'pyshacl>=0.13.3',

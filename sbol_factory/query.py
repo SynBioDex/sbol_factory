@@ -127,7 +127,7 @@ class Query():
             WHERE 
             {{
                 ?property_uri rdf:type owl:ObjectProperty .
-                ?property_uri rdfs:subPropertyOf opil:compositionalProperty .
+                ?property_uri rdfs:subPropertyOf sbol:directlyComprises .
                 ?property_uri rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)* <{}>.
             }}
             '''.format(class_uri)
@@ -142,7 +142,7 @@ class Query():
             WHERE 
             {{
                 ?property_uri rdf:type owl:ObjectProperty .
-                ?property_uri rdfs:subPropertyOf opil:compositionalProperty .
+                ?property_uri rdfs:subPropertyOf sbol:directlyComprises .
                 <{}> rdfs:subClassOf ?restriction .
                 ?restriction owl:onProperty ?property_uri .
             }}

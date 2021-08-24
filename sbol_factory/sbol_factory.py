@@ -18,11 +18,17 @@ import sys
 import argparse
 import graphviz
 import importlib
+import logging
 
 
 SBOL = 'http://sbols.org/v3#'
 OM = 'http://www.ontology-of-units-of-measure.org/resource/om-2/'
 PROVO = 'http://www.w3.org/ns/prov#'
+
+
+logging.basicConfig(format='%(message)s')
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
 
 # Expose Document through the OPIL API
@@ -62,7 +68,7 @@ class ValidationReport():
 class SBOLFactory():
 
     graph = rdflib.Graph()
-    graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbol3.ttl'), format ='ttl')
+    graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbolowl3.rdf'), format ='xml')
     graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/prov-o.owl'), format ='xml')
     graph.namespace_manager.bind('sbol', Query.SBOL)
     graph.namespace_manager.bind('opil', Query.OPIL)
@@ -126,8 +132,8 @@ class SBOLFactory():
             raise Exception('Superclass {} does not have a constructor'.format(superclass_uri))
 
         #Logging
-        log += f'\n{CLASS_NAME}\n'
-        log += '-' * (len(CLASS_NAME) - 2) + '\n'
+        LOGGER.info(f'\n{CLASS_NAME}\n')
+        LOGGER.info('-' * (len(CLASS_NAME) - 2) + '\n')
 
         # Collect property information for constructor, cached outside for speed
         # Object properties can be either compositional or associative
@@ -239,7 +245,7 @@ class SBOLFactory():
             else:
                 datatype = None
             lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)
-            log += f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n'
+            LOGGER.info(f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n')
         property_uris = SBOLFactory.query.query_datatype_properties(CLASS_URI)
         for property_uri in property_uris:
             property_name = SBOLFactory.query.query_label(property_uri).replace(' ', '_')
@@ -249,7 +255,7 @@ class SBOLFactory():
             else:
                 datatype = None
             lower_bound, upper_bound = SBOLFactory.query.query_cardinality(property_uri, CLASS_URI)            
-            log += f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n'
+            LOGGER.info(f'\t{property_name}\t{datatype}\t{lower_bound}\t{upper_bound}\n')
         return symbol_table
 
     @staticmethod

@@ -22,7 +22,7 @@
 owl:maxCardinality rdf:type owl:AnnotationProperty .
 owl:minCardinality rdf:type owl:AnnotationProperty .
 
-opil:compositionalProperty rdf:type owl:AnnotationProperty . # should be SBOL - sbol_factory issue #10
+sbol:directlyComprises rdf:type owl:AnnotationProperty . # should be SBOL - sbol_factory issue #10
 
 
 #################################################################
@@ -57,13 +57,13 @@ uml:isUnique rdf:type owl:DatatypeProperty ;
          rdfs:label "is_unique" .
 
 uml:lowerValue rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain sbol:Identified ; # should probably actually be a union
          rdfs:range uml:ValueSpecification ;
          rdfs:label "lower_value" .
 
 uml:upperValue rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain sbol:Identified ; # should probably actually be a union
          rdfs:range uml:ValueSpecification ;
          rdfs:label "upper_value" .
@@ -130,7 +130,7 @@ uml:LiteralIdentified rdf:type owl:Class ;
       owl:minCardinality "1"^^xsd:nonNegativeInteger ; owl:maxCardinality "1"^^xsd:nonNegativeInteger ] .
 
 uml:identifiedValue rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:LiteralIdentified ;
          rdfs:range sbol:Identified ;
          rdfs:label "value" .
@@ -159,7 +159,7 @@ uml:constrainedElement rdf:type owl:ObjectProperty ;
          rdfs:label "constrained_elements" .
 
 uml:specification rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Constraint ;
          rdfs:range uml:ValueSpecification ;
          rdfs:label "specification" .
@@ -192,7 +192,7 @@ uml:direction rdf:type owl:DatatypeProperty ;
          rdfs:label "direction" .
 
 uml:defaultValue rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Parameter ;
          rdfs:range uml:ValueSpecification ;
          rdfs:label "default_value" .
@@ -215,19 +215,19 @@ uml:Behavior rdf:type owl:Class ;
 #         rdfs:label "isReentrant" .
 
 uml:precondition rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Behavior ;
          rdfs:range uml:Constraint ;
          rdfs:label "preconditions" .
 
 uml:postcondition rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Behavior ;
          rdfs:range uml:Constraint ;
          rdfs:label "postconditions" .
 
 uml:ownedParameter rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Behavior ;
          rdfs:range uml:Parameter ;
          rdfs:label "parameters" .
@@ -241,13 +241,13 @@ uml:Activity rdf:type owl:Class ;
     # omitted: isReadOnly, isSingleExecution, variable
 
 uml:node rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Activity ;
          rdfs:range uml:ActivityNode ;
          rdfs:label "nodes" .
 
 uml:edge rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Activity ;
          rdfs:range uml:ActivityEdge ;
          rdfs:label "edges" .
@@ -331,13 +331,13 @@ uml:Action rdf:type owl:Class ;
     # omitted: /context, localPrecondition, localPostcondition
 
 uml:input rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Action ;
          rdfs:range uml:InputPin ;
          rdfs:label "inputs" .
 
 uml:output rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:Action ;
          rdfs:range uml:OutputPin ;
          rdfs:label "outputs" .
@@ -389,7 +389,7 @@ uml:ValuePin rdf:type owl:Class ;
       owl:minCardinality "1"^^xsd:nonNegativeInteger ; owl:maxCardinality "1"^^xsd:nonNegativeInteger ] .
 
 uml:value rdf:type owl:ObjectProperty ;
-         rdfs:subPropertyOf opil:compositionalProperty ;
+         rdfs:subPropertyOf sbol:directlyComprises ;
          rdfs:domain uml:ValuePin ;
          rdfs:range uml:ValueSpecification ;
          rdfs:label "value" .

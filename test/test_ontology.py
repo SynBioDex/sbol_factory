@@ -123,5 +123,21 @@ class TestDateTimeProperty(unittest.TestCase):
         self.assertTrue('BehaviorExecution' in paml.__dict__)
         self.assertTrue(sbol3.Activity in paml.BehaviorExecution.mro()) 
 
+class TestComposition(unittest.TestCase):
+
+    def setUp(self):
+        SBOLFactory.clear()
+
+    def tearDown(self):
+        SBOLFactory.clear()
+
+    def test_composition(self):
+        SBOLFactory('uml',
+                    os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-ontology.ttl'),
+                    'http://bioprotocols.org/uml#')
+        self.assertIn('http://bioprotocols.org/uml#precondition',
+                      SBOLFactory.query.query_compositional_properties('http://bioprotocols.org/uml#Behavior'))
+
+
 if __name__ == '__main__':
     unittest.main()

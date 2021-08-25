@@ -9,7 +9,7 @@ class Query():
     graph = None
     OWL = rdflib.URIRef('http://www.w3.org/2002/07/owl#')
     RDF = rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
-    SBOL = rdflib.URIRef('http://sbols.org/v2#')
+    SBOL = rdflib.URIRef('http://sbols.org/v3#')
     OPIL = rdflib.URIRef('http://bioprotocols.org/opil/v1#')
     RDFS = rdflib.URIRef('http://www.w3.org/2000/01/rdf-schema#')
     XSD = rdflib.URIRef('http://www.w3.org/2001/XMLSchema#')
@@ -127,7 +127,7 @@ class Query():
             WHERE 
             {{
                 ?property_uri rdf:type owl:ObjectProperty .
-                ?property_uri rdfs:subPropertyOf opil:compositionalProperty .
+                ?property_uri rdfs:subPropertyOf sbol:directlyComprises .
                 ?property_uri rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)* <{}>.
             }}
             '''.format(class_uri)
@@ -142,7 +142,7 @@ class Query():
             WHERE 
             {{
                 ?property_uri rdf:type owl:ObjectProperty .
-                ?property_uri rdfs:subPropertyOf opil:compositionalProperty .
+                ?property_uri rdfs:subPropertyOf sbol:directlyComprises .
                 <{}> rdfs:subClassOf ?restriction .
                 ?restriction owl:onProperty ?property_uri .
             }}

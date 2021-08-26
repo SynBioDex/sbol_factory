@@ -36,6 +36,16 @@ class TestOntologyToModule(unittest.TestCase):
         tmp = tempfile.mkdtemp()
         print(f'Exporting test figures into {tmp}')
         figure_maker.generate(tmp)
+        dot_source_actual = ''
+        with open(os.path.join(tmp, 'Activity_abstraction_hierarchy')) as dot_file:
+            dot_source_actual = dot_file.read()
+        dot_source_expected = '''digraph Activity {
+	prov_Activity -> uml_Activity [arrowtail=empty dir=back fontname="Bitstream Vera Sans" fontsize=8]
+	prov_Activity [label="{prov:Activity|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+	uml_Activity [label="{uml:Activity|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+}\n'''
+        self.assertEqual(dot_source_actual, dot_source_expected) 
+
 
 if __name__ == '__main__':
     unittest.main()

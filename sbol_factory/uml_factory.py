@@ -11,10 +11,13 @@ class UMLFactory:
     """
     Class for generating UML diagrams from an ontology file
     """
+    namespace_to_prefix = {}
 
     def __init__(self, ontology_path, ontology_namespace):
         self.namespace = ontology_namespace
         self.query = Query(ontology_path)
+        for prefix, ns in self.query.graph.namespaces():
+            UMLFactory.namespace_to_prefix[str(ns)] = prefix
 
     def generate(self, output_path):
         if not os.path.exists(output_path):
@@ -30,7 +33,8 @@ class UMLFactory:
             # will depend on the last rendering method called
             self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
             self._generate(class_uri, self.draw_class_definition, dot)
-            source = graphviz.Source(dot.source.replace('\\\\', '\\'))
+            dot_source_sanitized = dot.source.replace('\\\\', '\\')
+            source = graphviz.Source(dot_source_sanitized)
             outfile = f'{class_name}_abstraction_hierarchy'
             source.render(posixpath.join(output_path, outfile))
 
@@ -216,16 +220,22 @@ class UMLFactory:
 
 def format_qname(class_uri):
     class_name = sbol.utils.parse_class_name(class_uri)
-    prefix = ''
-    if str(Query.SBOL) in class_uri:
-        prefix = 'sbol:'
-    elif str(Query.OM) in class_uri:
-        prefix = 'om:'
-    qname = prefix + class_name
+    qname = class_name
+    for ns, prefix in UMLFactory.namespace_to_prefix.items():
+        if ns in class_uri:
+            qname = prefix + ':' + class_name
+    #prefix = '' 
+    #if str(Query.SBOL) in class_uri:
+    #    prefix = 'sbol:'
+    #elif str(Query.OM) in class_uri:
+    #    prefix = 'om:'
+    #qname = prefix + class_name
     return qname
 
 def create_uml_record(dot_graph, class_uri, label):
-    class_name = sbol.utils.parse_class_name(class_uri)
+    #class_name = sbol.utils.parse_class_name(class_uri)
+    qname = format_qname(class_uri)
+    node_name = qname.replace(':', '_')
     node_format = {
         'label' : None,
         'fontname' : 'Bitstream Vera Sans',
@@ -233,11 +243,11 @@ def create_uml_record(dot_graph, class_uri, label):
         'shape': 'record'
         }
     node_format['label'] = label
-    dot_graph.node(class_name, **node_format)
+    dot_graph.node(node_name, **node_format)
 
 def create_association(dot_graph, subject_uri, object_uri, label):
-    subject_class = sbol.utils.parse_class_name(subject_uri)
-    object_class = sbol.utils.parse_class_name(object_uri)
+    subject_node = format_qname(subject_uri).replace(':', '_')
+    object_node = format_qname(object_uri).replace(':', '_')
     association_relationship = {
             'label' : None,
             'arrowtail' : 'odiamond',
@@ -247,14 +257,14 @@ def create_association(dot_graph, subject_uri, object_uri, label):
             'dir' : 'both'
         }
     association_relationship['label'] = label
-    dot_graph.edge(subject_class, object_class, **association_relationship)
+    dot_graph.edge(subject_node, object_node, **association_relationship)
     qname = format_qname(object_uri)
     label = '{' + qname + '|}'
     create_uml_record(dot_graph, object_uri, label)
 
 def create_composition(dot_graph, subject_uri, object_uri, label):
-    subject_class = sbol.utils.parse_class_name(subject_uri)
-    object_class = sbol.utils.parse_class_name(object_uri)
+    subject_node = format_qname(subject_uri).replace(':', '_')
+    object_node = format_qname(object_uri).replace(':', '_')
     composition_relationship = {
             'label' : None,
             'arrowtail' : 'diamond',
@@ -264,14 +274,14 @@ def create_composition(dot_graph, subject_uri, object_uri, label):
             'dir' : 'both'
         }
     composition_relationship['label'] = label
-    dot_graph.edge(subject_class, object_class, **composition_relationship)
+    dot_graph.edge(subject_node, object_node, **composition_relationship)
     qname = format_qname(object_uri)
     label = '{' + qname + '|}'
     create_uml_record(dot_graph, object_uri, label)
 
 def create_inheritance(dot_graph, superclass_uri, subclass_uri):
-    superclass = sbol.utils.parse_class_name(superclass_uri)
-    subclass = sbol.utils.parse_class_name(subclass_uri)
+    superclass_node = format_qname(superclass_uri).replace(':', '_')
+    subclass_node = format_qname(subclass_uri).replace(':', '_')
     inheritance_relationship = {
             'label' : None,
             'arrowtail' : 'empty',
@@ -279,7 +289,7 @@ def create_inheritance(dot_graph, superclass_uri, subclass_uri):
             'fontsize' : '8',
             'dir' : 'back'
         }
-    dot_graph.edge(superclass, subclass, **inheritance_relationship)
+    dot_graph.edge(superclass_node, subclass_node, **inheritance_relationship)
     qname = format_qname(superclass_uri)
     label = '{' + qname + '|}'
     create_uml_record(dot_graph, superclass_uri, label)

@@ -18,7 +18,7 @@ class Query():
     def __init__(self, ontology_path):
         if not Query.graph:
             Query.graph = rdflib.Graph()
-            Query.graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbol3.ttl'), format ='ttl')
+            Query.graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbolowl3.rdf'))
             Query.graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/prov-o.owl'), format ='xml')
             Query.graph.namespace_manager.bind('sbol', Query.SBOL)
             Query.graph.namespace_manager.bind('rdfs', Query.RDFS)

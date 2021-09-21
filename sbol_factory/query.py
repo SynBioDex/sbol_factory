@@ -10,7 +10,6 @@ class Query():
     OWL = rdflib.URIRef('http://www.w3.org/2002/07/owl#')
     RDF = rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
     SBOL = rdflib.URIRef('http://sbols.org/v3#')
-    OPIL = rdflib.URIRef('http://bioprotocols.org/opil/v1#')
     RDFS = rdflib.URIRef('http://www.w3.org/2000/01/rdf-schema#')
     XSD = rdflib.URIRef('http://www.w3.org/2001/XMLSchema#')
     OM = rdflib.URIRef('http://www.ontology-of-units-of-measure.org/resource/om-2/')
@@ -19,11 +18,9 @@ class Query():
     def __init__(self, ontology_path):
         if not Query.graph:
             Query.graph = rdflib.Graph()
-            Query.graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbol3.ttl'), format ='ttl')
+            Query.graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbolowl3.rdf'))
             Query.graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/prov-o.owl'), format ='xml')
             Query.graph.namespace_manager.bind('sbol', Query.SBOL)
-            Query.graph.namespace_manager.bind('opil', Query.OPIL)
-            Query.graph.namespace_manager.bind('owl', Query.OWL)
             Query.graph.namespace_manager.bind('rdfs', Query.RDFS)
             Query.graph.namespace_manager.bind('rdf', Query.RDF)
             Query.graph.namespace_manager.bind('xsd', Query.XSD)
@@ -52,10 +49,10 @@ class Query():
         query = '''
             SELECT distinct ?cls 
             WHERE 
-            {{
+            {
                 ?cls rdf:type owl:Class . 
-            }}
-            '''.format(str(Query.OPIL))
+            }
+            '''
         response = self.graph.query(query)
         sbol_types = [str(row[0]) for row in response]
         return sbol_types
@@ -181,8 +178,6 @@ class Query():
         return list(set(property_types))
 
     def query_cardinality(self, property_uri, class_uri):
-        # The OPIL ontology does not explicitly specify cardinality restrictions
-        # for every property, so some assumptions about defaults must be made
         lower_bound = 0
         upper_bound = inf
         query = '''

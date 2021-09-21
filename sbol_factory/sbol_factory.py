@@ -26,7 +26,6 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
 
-# Expose Document through the OPIL API
 class Document(sbol.Document):
 
     def __init__(self):
@@ -66,7 +65,6 @@ class SBOLFactory():
     graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/sbolowl3.rdf'), format ='xml')
     graph.parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rdf/prov-o.owl'), format ='xml')
     graph.namespace_manager.bind('sbol', Query.SBOL)
-    graph.namespace_manager.bind('opil', Query.OPIL)
     graph.namespace_manager.bind('owl', Query.OWL)
     graph.namespace_manager.bind('rdfs', Query.RDFS)
     graph.namespace_manager.bind('rdf', Query.RDF)

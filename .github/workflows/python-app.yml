@@ -26,4 +26,5 @@ jobs:
     - name: Run regression tests
       run: |
         pip install .
+        pip list
         pytest

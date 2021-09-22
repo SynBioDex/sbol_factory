@@ -1,3 +1,5 @@
+![gh-action badge](https://github.com/SynBioDex/sbol_factory/workflows/Python%20package/badge.svg)
+
 # sbol_factory
 
 The SBOLFactory provides a mechanism for automatically generating an interactive, object-oriented API from a declarative data model specification encoded in OWL. 

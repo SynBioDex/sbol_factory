@@ -15,7 +15,8 @@ setup(name='sbol_factory',
             'pyshacl>=0.13.3',
             'python-dateutil>=2.8.1',
             'requests',
-            'graphviz'
+            'graphviz',
+            'pylatex'
       ],
       packages=['sbol_factory'],
       package_data={'sbol_factory': ['rdf/*', 'sparql/*']},

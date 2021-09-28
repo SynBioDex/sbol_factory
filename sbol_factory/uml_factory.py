@@ -2,10 +2,12 @@ from .query import Query
 
 import sbol3 as sbol
 
-from math import inf
 import posixpath
 import os
 import graphviz
+from math import inf
+from collections import OrderedDict
+
 
 class UMLFactory:
     """
@@ -27,13 +29,14 @@ class UMLFactory:
                 continue
             class_name = sbol.utils.parse_class_name(class_uri)
             dot = graphviz.Digraph(class_name)
-            # dot.graph_attr['splines'] = 'ortho'
+            #dot.graph_attr['splines'] = 'ortho'
 
             # Order matters here, as the label for an entity
             # will depend on the last rendering method called
             self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
             self._generate(class_uri, self.draw_class_definition, dot)
             dot_source_sanitized = dot.source.replace('\\\\', '\\')
+            dot_source_sanitized = remove_duplicates(dot_source_sanitized)
             source = graphviz.Source(dot_source_sanitized)
             outfile = f'{class_name}_abstraction_hierarchy'
             source.render(posixpath.join(output_path, outfile))
@@ -249,14 +252,14 @@ def create_association(dot_graph, subject_uri, object_uri, label):
     subject_node = format_qname(subject_uri).replace(':', '_')
     object_node = format_qname(object_uri).replace(':', '_')
     association_relationship = {
-            'label' : None,
+            'xlabel' : None,
             'arrowtail' : 'odiamond',
             'arrowhead' : 'vee',
             'fontname' : 'Bitstream Vera Sans',
             'fontsize' : '8',
             'dir' : 'both'
         }
-    association_relationship['label'] = label
+    association_relationship['xlabel'] = label
     dot_graph.edge(subject_node, object_node, **association_relationship)
     qname = format_qname(object_uri)
     label = '{' + qname + '|}'
@@ -266,14 +269,14 @@ def create_composition(dot_graph, subject_uri, object_uri, label):
     subject_node = format_qname(subject_uri).replace(':', '_')
     object_node = format_qname(object_uri).replace(':', '_')
     composition_relationship = {
-            'label' : None,
+            'xlabel' : None,
             'arrowtail' : 'diamond',
             'arrowhead' : 'vee',
             'fontname' : 'Bitstream Vera Sans',
             'fontsize' : '8',
             'dir' : 'both'
         }
-    composition_relationship['label'] = label
+    composition_relationship['xlabel'] = label
     dot_graph.edge(subject_node, object_node, **composition_relationship)
     qname = format_qname(object_uri)
     label = '{' + qname + '|}'
@@ -294,3 +297,10 @@ def create_inheritance(dot_graph, superclass_uri, subclass_uri):
     label = '{' + qname + '|}'
     create_uml_record(dot_graph, superclass_uri, label)
 
+def remove_duplicates(dot_source):
+    d = OrderedDict()
+    entries = dot_source.split('\n')
+    for e in entries:
+        d[e] = None
+    dot_source = '\n'.join(list(d.keys()))
+    return dot_source

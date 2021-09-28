@@ -118,6 +118,19 @@ class Query():
         property_types.extend(response)
         return list(set(property_types))
 
+    def query_associative_properties(self, class_uri):
+        properties = self.query_object_properties(class_uri)
+        compositional_properties = self.query_compositional_properties(class_uri)
+        associative_property_uris = [uri for uri in properties if uri not in
+                                    compositional_properties]
+        return associative_property_uris
+
+    def query_properties(self, class_uri):
+        return self.query_datatype_properties(class_uri) + self.query_object_properties(class_uri)
+
+    def query_property_names(self, property_uris):
+        return [self.query_label(p).replace(' ', '_') for p in property_uris] 
+
     def query_compositional_properties(self, class_uri):
         query = '''
             SELECT distinct ?property_uri
@@ -259,6 +272,24 @@ class Query():
             raise Exception(f'{property_uri} has no label')
         if len(response) > 1:
             raise Exception(f'{property_uri} has more than one label')
+        property_name = response[0]
+        return property_name
+
+    def query_comment(self, uri):
+        query =     '''
+            SELECT distinct ?comment
+            WHERE 
+            {{
+                <{}> rdfs:comment ?comment
+            }}
+            '''.format(uri)    
+        response = self.graph.query(query)
+        response = [str(row[0]) for row in response]
+        if len(response) == 0:
+            return ''
+            #raise Exception(f'{uri} has no comment')
+        if len(response) > 1:
+            raise Exception(f'{uri} has more than one comment')
         property_name = response[0]
         return property_name
 

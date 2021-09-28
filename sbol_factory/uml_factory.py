@@ -3,10 +3,11 @@ from .query import Query
 import sbol3 as sbol
 import pylatex
 
-from math import inf
 import posixpath
 import os
 import graphviz
+from math import inf
+
 
 class UMLFactory:
     """
@@ -39,7 +40,7 @@ class UMLFactory:
             self._generate(class_uri, self.write_class_definition, dot)
             dot_source_sanitized = dot.source.replace('\\\\', '\\')
             source = graphviz.Source(dot_source_sanitized)
-            outfile = f'{class_name}_abstraction_hierarchy'
+            outfile = f'{class_name}_abstraction_hierarchy.dot'
             source.render(os.path.join(output_path, outfile))
         print(f'Writing to {output_path}')
         self.tex.generate_tex(os.path.join(output_path, self.prefix))
@@ -67,68 +68,59 @@ class UMLFactory:
         QNAME = format_qname(class_uri)
         qname_super = format_qname(superclass_uri)
 
-        tex_description = f'The \sbol{{{CLASS_NAME}}} class is shown in \\ref{{{QNAME}}}. It is derived from \sbol{{{SUPERCLASS_NAME}}}. '
-        #tex_description += self.query.query_comment()
-
-        # Object properties can be either compositional or associative
-        property_uris = self.query.query_object_properties(CLASS_URI)
-        property_names = [self.query.query_label(p).replace(' ', '_') for p in property_uris]
-        if len(property_names):
-            tex_description += f'The \sbol{{{CLASS_NAME}}} includes the following properties: ' + ', '.join(property_names) + '. '
-
         with self.tex.create(pylatex.Section(CLASS_NAME)) as section:
-             self.tex.append(pylatex.NoEscape(tex_description))
+            tex_description = f'The \sbol{{{CLASS_NAME}}} class is shown in \\ref{{{QNAME}}}. It is derived from \sbol{{{SUPERCLASS_NAME}}}. '
+            tex_description += self.query.query_comment(class_uri)
+            self.tex.append(pylatex.NoEscape(tex_description))
 
-        compositional_property_uris = self.query.query_compositional_properties(CLASS_URI)
-        compositional_property_names = [self.query.query_label(p).replace(' ', '_') for p in compositional_property_uris]
-        associative_property_uris = [uri for uri in property_uris if uri not in
-                                    compositional_property_uris]
-        associative_property_names = [self.query.query_label(p).replace(' ', '_') for p in associative_property_uris]
+            property_names = self.query.query_property_names(self.query.query_properties(CLASS_URI)) 
+            if len(property_names):
+                tex_description = f'The \sbol{{{CLASS_NAME}}} includes the following properties: ' + ', '.join(property_names) + '. '
+                self.tex.append(pylatex.NoEscape(tex_description))
 
         with self.tex.create(pylatex.Itemize()) as items:
-            for property_uri in associative_property_uris:
+            for property_uri in self.query.query_associative_properties(class_uri):
                 lower_bound, upper_bound = self.query.query_cardinality(property_uri, class_uri)
                 object_class_uri = self.query.query_property_datatype(property_uri, CLASS_URI)[0]
                 PNAME = self.query.query_label(property_uri).replace(' ', '_')
                 OPTIONALITY = 'REQUIRED' if lower_bound == 1 else 'OPTIONAL'
                 OBJ_NAME = sbol.utils.parse_class_name(object_class_uri)
-                tex_description = f'The \sbol{{{PNAME}}} property is {OPTIONALITY} and points to an associated object of type {OBJ_NAME}' 
-                #tex_description += self.query.query_comment(property_uri)
+                PLURALITY = 'a URI reference to an associated object' if upper_bound == 1 else 'URI references to associated objects'
+                tex_description = f'The \sbol{{{PNAME}}} property is {OPTIONALITY} and contains {PLURALITY} of type {OBJ_NAME}' 
+                tex_description += self.query.query_comment(property_uri)
                 items.add_item(pylatex.NoEscape(tex_description))
-    
-        ## Initialize compositional properties
-        #for property_uri in compositional_properties:
-        #    if len(compositional_properties) != len(set(compositional_properties)):
-        #        print(f'{property_uri} is found more than once')
-        #    property_name = self.query.query_label(property_uri).replace(' ', '_')
-        #    property_name = format_qname(property_uri)
-        #    lower_bound, upper_bound = self.query.query_cardinality(property_uri, class_uri)
-        #    if upper_bound == inf:
-        #        upper_bound = '*'
-        #    object_class_uri = self.query.query_property_datatype(property_uri, CLASS_URI)[0]
-        #    arrow_label = f'{property_name} [{lower_bound}..{upper_bound}]'
-        #    create_composition(dot, class_uri, object_class_uri, arrow_label)
+            for property_uri in self.query.query_compositional_properties(class_uri):
+                lower_bound, upper_bound = self.query.query_cardinality(property_uri, class_uri)
+                object_class_uri = self.query.query_property_datatype(property_uri, CLASS_URI)[0]
+                PNAME = self.query.query_label(property_uri).replace(' ', '_')
+                OPTIONALITY = 'REQUIRED' if lower_bound == 1 else 'OPTIONAL'
+                OBJ_NAME = sbol.utils.parse_class_name(object_class_uri)
+                PLURALITY = 'a child object' if upper_bound == 1 else 'child objects'
+                tex_description = f'The \sbol{{{PNAME}}} property is {OPTIONALITY} that points to {PLURALITY} of type {OBJ_NAME}' 
+                tex_description += self.query.query_comment(property_uri)
+                items.add_item(pylatex.NoEscape(tex_description))
 
-        # Initialize datatype properties
-        property_uris = self.query.query_datatype_properties(CLASS_URI)
-        for property_uri in property_uris:
-            property_name = self.query.query_label(property_uri).replace(' ', '_')
-            property_name = format_qname(property_uri)
-
-            # Get the datatype of this property
-            datatypes = self.query.query_property_datatype(property_uri, CLASS_URI)
-            if len(datatypes) == 0:
-                continue
-            if len(datatypes) > 1:  # This might indicate an error in the ontology
-                raise
-            # Get the cardinality of this datatype property
-            lower_bound, upper_bound = self.query.query_cardinality(property_uri, class_uri)
-            if upper_bound == inf:
-                upper_bound = '*'
-
-            datatype = sbol.utils.parse_class_name(datatypes[0])
-            if datatype == 'anyURI':
-                datatype = 'URI'
+            # Datatype properties
+            property_uris = self.query.query_datatype_properties(CLASS_URI)
+            property_names = self.query.query_property_names(property_uris)
+        for property_uri, property_name in zip(property_uris, property_names):
+                # Get the datatype of this property
+                datatypes = self.query.query_property_datatype(property_uri, CLASS_URI)
+                if len(datatypes) == 0:
+                    continue
+                if len(datatypes) > 1:  # This might indicate an error in the ontology
+                    raise
+                # Get the cardinality of this datatype property
+                lower_bound, upper_bound = self.query.query_cardinality(property_uri, class_uri)
+                PNAME = property_name
+                DT = sbol.utils.parse_class_name(datatypes[0])
+                if DT == 'anyURI':
+                    DT = 'URI'
+                OPTIONALITY = 'REQUIRED' if lower_bound == 1 else 'OPTIONAL'
+                PLURALITY = 'has a singleton value' if upper_bound == 1 else 'may contain multiple values'
+                tex_description = f'The \sbol{{{PNAME}}} property is {OPTIONALITY} and {PLURALITY} of type {DT}' 
+                tex_description += self.query.query_comment(property_uri)
+                items.add_item(pylatex.NoEscape(tex_description))
 
         with self.tex.create(pylatex.Figure(position='h!')) as figure:
             figure.add_image(f'{CLASS_NAME}_abstraction_hierarchy.pdf')

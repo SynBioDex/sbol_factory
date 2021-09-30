@@ -7,6 +7,7 @@ import posixpath
 import os
 import graphviz
 from math import inf
+from collections import OrderedDict
 
 
 class UMLFactory:
@@ -340,14 +341,14 @@ def create_association(dot_graph, subject_uri, object_uri, label):
     subject_node = format_qname(subject_uri).replace(':', '_')
     object_node = format_qname(object_uri).replace(':', '_')
     association_relationship = {
-            'label' : None,
+            'xlabel' : None,
             'arrowtail' : 'odiamond',
             'arrowhead' : 'vee',
             'fontname' : 'Bitstream Vera Sans',
             'fontsize' : '8',
             'dir' : 'both'
         }
-    association_relationship['label'] = label
+    association_relationship['xlabel'] = label
     dot_graph.edge(subject_node, object_node, **association_relationship)
     qname = format_qname(object_uri)
     label = '{' + qname + '|}'
@@ -357,14 +358,14 @@ def create_composition(dot_graph, subject_uri, object_uri, label):
     subject_node = format_qname(subject_uri).replace(':', '_')
     object_node = format_qname(object_uri).replace(':', '_')
     composition_relationship = {
-            'label' : None,
+            'xlabel' : None,
             'arrowtail' : 'diamond',
             'arrowhead' : 'vee',
             'fontname' : 'Bitstream Vera Sans',
             'fontsize' : '8',
             'dir' : 'both'
         }
-    composition_relationship['label'] = label
+    composition_relationship['xlabel'] = label
     dot_graph.edge(subject_node, object_node, **composition_relationship)
     qname = format_qname(object_uri)
     label = '{' + qname + '|}'
@@ -385,3 +386,10 @@ def create_inheritance(dot_graph, superclass_uri, subclass_uri):
     label = '{' + qname + '|}'
     create_uml_record(dot_graph, superclass_uri, label)
 
+def remove_duplicates(dot_source):
+    d = OrderedDict()
+    entries = dot_source.split('\n')
+    for e in entries:
+        d[e] = None
+    dot_source = '\n'.join(list(d.keys()))
+    return dot_source

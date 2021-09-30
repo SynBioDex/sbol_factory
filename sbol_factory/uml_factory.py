@@ -1,6 +1,7 @@
 from .query import Query
 
 import sbol3 as sbol
+import pylatex
 
 import posixpath
 import os
@@ -18,28 +19,45 @@ class UMLFactory:
     def __init__(self, ontology_path, ontology_namespace):
         self.namespace = ontology_namespace
         self.query = Query(ontology_path)
+        self.tex = pylatex.Document()
         for prefix, ns in self.query.graph.namespaces():
             UMLFactory.namespace_to_prefix[str(ns)] = prefix
+        self.prefix = UMLFactory.namespace_to_prefix[self.namespace]
 
     def generate(self, output_path):
         if not os.path.exists(output_path):
             os.mkdir(output_path)
-        for class_uri in self.query.query_classes():
-            if self.namespace not in class_uri:
-                continue
-            class_name = sbol.utils.parse_class_name(class_uri)
-            dot = graphviz.Digraph(class_name)
-            #dot.graph_attr['splines'] = 'ortho'
+        with self.tex.create(pylatex.Section('Data Model')):
+            for class_uri in self.query.query_classes():
+                if self.namespace not in class_uri:
+                    continue
+                class_name = sbol.utils.parse_class_name(class_uri)
+                dot = graphviz.Digraph(class_name)
+                # dot.graph_attr['splines'] = 'ortho'
 
-            # Order matters here, as the label for an entity
-            # will depend on the last rendering method called
-            self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
-            self._generate(class_uri, self.draw_class_definition, dot)
-            dot_source_sanitized = dot.source.replace('\\\\', '\\')
-            dot_source_sanitized = remove_duplicates(dot_source_sanitized)
-            source = graphviz.Source(dot_source_sanitized)
-            outfile = f'{class_name}_abstraction_hierarchy'
-            source.render(posixpath.join(output_path, outfile))
+                # Order matters here, as the label for an entity
+                # will depend on the last rendering method called
+                self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
+                self._generate(class_uri, self.draw_class_definition, dot)
+                self._generate(class_uri, self.write_class_definition, dot)
+                dot_source_sanitized = dot.source.replace('\\\\', '\\')
+                source = graphviz.Source(dot_source_sanitized)
+                outfile = f'{class_name}_abstraction_hierarchy'
+                source.render(os.path.join(output_path, outfile))
+        print(f'Writing to {output_path}')
+        fname_tex = os.path.join(output_path, self.prefix)
+        self.tex.generate_tex(fname_tex)
+        fname_tex += '.tex'
+        with open(fname_tex, 'r') as f:
+            tex_source = f.read()
+        # Strip preamble
+        opening_clause = '\\begin{document}'
+        closing_clause = '\\end{document}'
+        lpos = tex_source.find(opening_clause) + len(opening_clause)
+        rpos = tex_source.find(closing_clause)
+        tex_source = tex_source[lpos:rpos]  
+        with open('dataModel.tex', 'w') as f:
+            f.write(tex_source)
 
     def _generate(self, class_uri, drawing_method_callback, dot_graph=None):
         if self.namespace not in class_uri:
@@ -53,6 +71,75 @@ class UMLFactory:
         #     return ''
 
         drawing_method_callback(class_uri, superclass_uri, dot_graph)
+
+    def write_class_definition(self, class_uri, superclass_uri, dot_graph=None):
+        CLASS_URI = class_uri
+        CLASS_NAME = sbol.utils.parse_class_name(class_uri)
+        SUPERCLASS_NAME = sbol.utils.parse_class_name(superclass_uri)
+        CMD1 = format_prefix(class_uri)
+        CMD2 = format_prefix(superclass_uri)
+
+        with self.tex.create(pylatex.Subsection(CLASS_NAME)) as subsection:
+            with self.tex.create(pylatex.Figure(position='h!')) as figure:
+                figure.add_image(f'{CLASS_NAME}_abstraction_hierarchy.pdf')
+                figure.add_caption(CLASS_NAME)
+                self.tex.append(pylatex.NoEscape(f'\label{{fig:{CLASS_NAME}}}'))
+
+            tex_description = f'The \{CMD1}{{{CLASS_NAME}}} class is shown in \\ref{{fig:{CLASS_NAME}}}. It is derived from \{CMD2}{{{SUPERCLASS_NAME}}}. '
+            tex_description += self.query.query_comment(class_uri)
+            self.tex.append(pylatex.NoEscape(tex_description))
+
+            property_names = [sbol.utils.parse_class_name(p) for p in self.query.query_properties(CLASS_URI)]
+            if len(property_names):
+                tex_description = f'The \{CMD1}{{{CLASS_NAME}}} includes the following properties: ' + ', '.join(property_names) + '. '
+                self.tex.append(pylatex.NoEscape(tex_description))
+
+        with self.tex.create(pylatex.Itemize()) as items:
+            for property_uri in self.query.query_associative_properties(class_uri):
+                lower_bound, upper_bound = self.query.query_cardinality(property_uri, class_uri)
+                object_class_uri = self.query.query_property_datatype(property_uri, CLASS_URI)[0]
+                PNAME = sbol.utils.parse_class_name(property_uri)
+                CMD = format_prefix(property_uri)
+                OPTIONALITY = 'REQUIRED' if lower_bound == 1 else 'OPTIONAL'
+                OBJ_NAME = sbol.utils.parse_class_name(object_class_uri)
+                PLURALITY = 'a URI reference to an associated object' if upper_bound == 1 else 'URI references to associated objects'
+                tex_description = f'The \{CMD}{{{PNAME}}} property is {OPTIONALITY} and contains {PLURALITY} of type {OBJ_NAME}' 
+                tex_description += self.query.query_comment(property_uri)
+                items.add_item(pylatex.NoEscape(tex_description))
+            for property_uri in self.query.query_compositional_properties(class_uri):
+                lower_bound, upper_bound = self.query.query_cardinality(property_uri, class_uri)
+                object_class_uri = self.query.query_property_datatype(property_uri, CLASS_URI)[0]
+                PNAME = sbol.utils.parse_class_name(property_uri)
+                CMD = format_prefix(property_uri)
+                OPTIONALITY = 'REQUIRED' if lower_bound == 1 else 'OPTIONAL'
+                OBJ_NAME = sbol.utils.parse_class_name(object_class_uri)
+                PLURALITY = 'a child object' if upper_bound == 1 else 'child objects'
+                tex_description = f'The \{CMD}{{{PNAME}}} property is {OPTIONALITY} that points to {PLURALITY} of type {OBJ_NAME}' 
+                tex_description += self.query.query_comment(property_uri)
+                items.add_item(pylatex.NoEscape(tex_description))
+
+            # Datatype properties
+            property_uris = self.query.query_datatype_properties(CLASS_URI)
+            property_names = self.query.query_property_names(property_uris)
+            for property_uri, property_name in zip(property_uris, property_names):
+                # Get the datatype of this property
+                datatypes = self.query.query_property_datatype(property_uri, CLASS_URI)
+                if len(datatypes) == 0:
+                    continue
+                if len(datatypes) > 1:  # This might indicate an error in the ontology
+                    raise
+                # Get the cardinality of this datatype property
+                lower_bound, upper_bound = self.query.query_cardinality(property_uri, class_uri)
+                PNAME = sbol.utils.parse_class_name(property_uri)
+                CMD = format_prefix(property_uri)
+                DT = sbol.utils.parse_class_name(datatypes[0])
+                if DT == 'anyURI':
+                    DT = 'URI'
+                OPTIONALITY = 'REQUIRED' if lower_bound == 1 else 'OPTIONAL'
+                PLURALITY = 'has a singleton value' if upper_bound == 1 else 'may contain multiple values'
+                tex_description = f'The \{CMD}{{{PNAME}}} property is {OPTIONALITY} and {PLURALITY} of type {DT}' 
+                tex_description += self.query.query_comment(property_uri)
+                items.add_item(pylatex.NoEscape(tex_description))
 
     def draw_abstraction_hierarchy(self, class_uri, superclass_uri, dot_graph=None):
 
@@ -224,16 +311,18 @@ class UMLFactory:
 def format_qname(class_uri):
     class_name = sbol.utils.parse_class_name(class_uri)
     qname = class_name
+    prefix = format_prefix(class_uri)
+    if prefix:
+        qname = prefix + ':' + class_name
+    return qname
+
+
+def format_prefix(class_uri):
     for ns, prefix in UMLFactory.namespace_to_prefix.items():
         if ns in class_uri:
-            qname = prefix + ':' + class_name
-    #prefix = '' 
-    #if str(Query.SBOL) in class_uri:
-    #    prefix = 'sbol:'
-    #elif str(Query.OM) in class_uri:
-    #    prefix = 'om:'
-    #qname = prefix + class_name
-    return qname
+            return prefix
+    return ''
+    
 
 def create_uml_record(dot_graph, class_uri, label):
     #class_name = sbol.utils.parse_class_name(class_uri)

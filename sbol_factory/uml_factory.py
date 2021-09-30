@@ -88,7 +88,7 @@ class UMLFactory:
             tex_description += self.query.query_comment(class_uri)
             self.tex.append(pylatex.NoEscape(tex_description))
 
-            property_names = self.query.query_property_names(self.query.query_properties(CLASS_URI)) 
+            property_names = [sbol.utils.parse_class_name(p) for p in self.query.query_properties(CLASS_URI)]
             if len(property_names):
                 tex_description = f'The \{CMD1}{{{CLASS_NAME}}} includes the following properties: ' + ', '.join(property_names) + '. '
                 self.tex.append(pylatex.NoEscape(tex_description))

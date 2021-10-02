@@ -21,10 +21,19 @@ OM = 'http://www.ontology-of-units-of-measure.org/resource/om-2/'
 PROVO = 'http://www.w3.org/ns/prov#'
 
 
-logging.basicConfig(format='%(message)s')
+#logging.basicConfig(format='%(message)s')
+logging.getLogger().handlers = []
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
-
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+ch.setFormatter(logging.Formatter('%(message)s'))
+LOGGER.addHandler(ch)
+ch2 = logging.StreamHandler()
+ch2.setLevel(logging.ERROR)
+ch2.setFormatter(logging.Formatter('[%(levelname)s] %(filename)s %(lineno)d: %(message)s'))
+LOGGER.addHandler(ch2)
 
 class Document(sbol.Document):
 
@@ -49,14 +58,6 @@ class ValidationReport():
 
     def __repr__(self):
         return self.message
-
-#logging.basicConfig(level=logging.CRITICAL)
-
-
-# def help():
-#     #logging.getLogger().setLevel(logging.INFO)
-#     print(SBOLFactory.__doc__)
-
 
 
 class SBOLFactory():

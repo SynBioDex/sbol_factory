@@ -1,0 +1,24 @@
+@prefix : <http://bioprotocols.org/paml#> .
+@prefix om: <http://www.ontology-of-units-of-measure.org/resource/om-2/> .
+@prefix opil: <http://bioprotocols.org/opil/v1#> . # this needs to go - sbol_factory issue #10
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sbol: <http://sbols.org/v3#> .
+@prefix uml: <http://bioprotocols.org/uml#> .
+@base <http://bioprotocols.org/uml#> .
+
+uml:NoRequiredArgs rdf:type owl:Class ;
+             rdfs:subClassOf sbol:Identified .  # Premature terminating period
+    [ rdf:type owl:Restriction ; owl:onClass uml:NoRequiredArgs ; owl:onProperty uml:behavior ;
+      owl:minCardinality "1"^^xsd:nonNegativeInteger ; owl:maxCardinality "1"^^xsd:nonNegativeInteger ] .
+
+uml:RequiredArgs rdf:type owl:Class ;
+             rdfs:subClassOf sbol:Identified ,
+    [ rdf:type owl:Restriction ; owl:onClass uml:RequiredArgs ; owl:onProperty uml:behavior ;
+      owl:minCardinality "1"^^xsd:nonNegativeInteger ; owl:maxCardinality "1"^^xsd:nonNegativeInteger ] .
+
+uml:behavior rdf:type owl:ObjectProperty ;
+             rdfs:domain uml:RequiredArgs ;
+             rdfs:label "behavior" .

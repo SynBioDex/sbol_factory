@@ -123,6 +123,23 @@ class TestDateTimeProperty(unittest.TestCase):
         self.assertTrue('BehaviorExecution' in paml.__dict__)
         self.assertTrue(sbol3.Activity in paml.BehaviorExecution.mro()) 
 
+
+class TestConstructors(unittest.TestCase):
+
+    def setUp(self):
+        SBOLFactory.clear()
+        self.uml = SBOLFactory('uml',
+                               os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-required-args.ttl'),
+                               'http://bioprotocols.org/uml#')
+
+    def test_unrecognized_keywords(self):
+        with self.assertRaises(TypeError):
+            self.uml.NoRequiredArgs(behavior='foo')
+
+    def tearDown(self):
+        SBOLFactory.clear()
+
+
 class TestComposition(unittest.TestCase):
 
     def setUp(self):

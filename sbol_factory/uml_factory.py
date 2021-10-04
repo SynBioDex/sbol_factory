@@ -39,7 +39,7 @@ class UMLFactory:
                 # will depend on the last rendering method called
                 self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
                 self._generate(class_uri, self.draw_class_definition, dot)
-                self._generate(class_uri, self.write_class_definition, dot)
+                self._generate(class_uri, self.write_class_definition, output_path)
                 dot_source_sanitized = dot.source.replace('\\\\', '\\')
                 source = graphviz.Source(dot_source_sanitized)
                 outfile = f'{class_name}_abstraction_hierarchy'
@@ -59,20 +59,20 @@ class UMLFactory:
         with open('dataModel.tex', 'w') as f:
             f.write(tex_source)
 
-    def _generate(self, class_uri, drawing_method_callback, dot_graph=None):
+    def _generate(self, class_uri, drawing_method_callback, *args):
         if self.namespace not in class_uri:
             return ''
         superclass_uri = self.query.query_superclass(class_uri)
-        self._generate(superclass_uri, drawing_method_callback, dot_graph)
+        self._generate(superclass_uri, drawing_method_callback, *args)
 
         class_name = sbol.utils.parse_class_name(class_uri)
 
         # if class_name in globals().keys():
         #     return ''
 
-        drawing_method_callback(class_uri, superclass_uri, dot_graph)
+        drawing_method_callback(class_uri, superclass_uri, *args)
 
-    def write_class_definition(self, class_uri, superclass_uri, dot_graph=None):
+    def write_class_definition(self, class_uri, superclass_uri, output_path):
         CLASS_URI = class_uri
         CLASS_NAME = sbol.utils.parse_class_name(class_uri)
         SUPERCLASS_NAME = sbol.utils.parse_class_name(superclass_uri)
@@ -81,7 +81,8 @@ class UMLFactory:
 
         with self.tex.create(pylatex.Subsection(CLASS_NAME)) as subsection:
             with self.tex.create(pylatex.Figure(position='h!')) as figure:
-                figure.add_image(f'{CLASS_NAME}_abstraction_hierarchy.pdf')
+                fname = os.path.join(output_path, f'{CLASS_NAME}_abstraction_hierarchy.pdf')
+                figure.add_image(fname)
                 figure.add_caption(CLASS_NAME)
                 self.tex.append(pylatex.NoEscape(f'\label{{fig:{CLASS_NAME}}}'))
 

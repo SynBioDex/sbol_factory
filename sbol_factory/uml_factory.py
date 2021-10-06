@@ -31,6 +31,10 @@ class UMLFactory:
             for class_uri in self.query.query_classes():
                 if self.namespace not in class_uri:
                     continue
+                if not self.query.is_top_level(class_uri):
+                    continue
+                if self.namespace in self.query.query_superclass(class_uri):
+                    continue
                 class_name = sbol.utils.parse_class_name(class_uri)
                 dot = graphviz.Digraph(class_name)
                 # dot.graph_attr['splines'] = 'ortho'
@@ -39,38 +43,38 @@ class UMLFactory:
                 # will depend on the last rendering method called
                 self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
                 self._generate(class_uri, self.draw_class_definition, dot)
-                self._generate(class_uri, self.write_class_definition, output_path)
+                #self._generate(class_uri, self.write_class_definition, output_path)
                 dot_source_sanitized = dot.source.replace('\\\\', '\\')
                 source = graphviz.Source(dot_source_sanitized)
                 outfile = f'{class_name}_abstraction_hierarchy'
                 source.render(os.path.join(output_path, outfile))
-        print(f'Writing to {output_path}')
-        fname_tex = os.path.join(output_path, self.prefix)
-        self.tex.generate_tex(fname_tex)
-        fname_tex += '.tex'
-        with open(fname_tex, 'r') as f:
-            tex_source = f.read()
-        # Strip preamble
-        opening_clause = '\\begin{document}'
-        closing_clause = '\\end{document}'
-        lpos = tex_source.find(opening_clause) + len(opening_clause)
-        rpos = tex_source.find(closing_clause)
-        tex_source = tex_source[lpos:rpos]  
-        with open('dataModel.tex', 'w') as f:
-            f.write(tex_source)
+        #print(f'Writing to {output_path}')
+        #fname_tex = os.path.join(output_path, self.prefix)
+        #self.tex.generate_tex(fname_tex)
+        #fname_tex += '.tex'
+        #with open(fname_tex, 'r') as f:
+        #    tex_source = f.read()
+        ## Strip preamble
+        #opening_clause = '\\begin{document}'
+        #closing_clause = '\\end{document}'
+        #lpos = tex_source.find(opening_clause) + len(opening_clause)
+        #rpos = tex_source.find(closing_clause)
+        #tex_source = tex_source[lpos:rpos]  
+        #with open('dataModel.tex', 'w') as f:
+        #    f.write(tex_source)
 
     def _generate(self, class_uri, drawing_method_callback, *args):
-        if self.namespace not in class_uri:
-            return ''
-        superclass_uri = self.query.query_superclass(class_uri)
-        self._generate(superclass_uri, drawing_method_callback, *args)
+        subclass_uris = self.query.query_subclasses(class_uri)
+        child_class_uris = [self.query.query_property_datatype(p, class_uri)[0] for p in self.query.query_compositional_properties(class_uri)]
+        for subclass_uri in subclass_uris:
+            print("Recursing into " + subclass_uri)
+            self._generate(subclass_uri, drawing_method_callback, *args)
+        for child_class_uri in child_class_uris:
+            print('Recursing into ' + child_class_uri)
+            self._generate(child_class_uri, drawing_method_callback, *args)
 
-        class_name = sbol.utils.parse_class_name(class_uri)
-
-        # if class_name in globals().keys():
-        #     return ''
-
-        drawing_method_callback(class_uri, superclass_uri, *args)
+        drawing_method_callback(class_uri, class_uri, *args)
+        print("Rendered " + class_uri)
 
     def write_class_definition(self, class_uri, superclass_uri, output_path):
         CLASS_URI = class_uri
@@ -161,7 +165,7 @@ class UMLFactory:
 
         for uri in subclass_uris:
             subclass_name = sbol.utils.parse_class_name(uri)
-            #create_inheritance(dot, class_uri, uri)
+            create_inheritance(dot, class_uri, uri)
             label = self.label_properties(uri)
             create_uml_record(dot, uri, label)
             self.draw_class_definition(uri, class_uri, dot)
@@ -245,7 +249,7 @@ class UMLFactory:
         else:
             dot = graphviz.Digraph(CLASS_NAME)
 
-        create_inheritance(dot, superclass_uri, class_uri)
+        #create_inheritance(dot, superclass_uri, class_uri)
 
         # Object properties can be either compositional or associative
         property_uris = self.query.query_object_properties(CLASS_URI)

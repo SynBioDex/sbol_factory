@@ -43,6 +43,8 @@ class TestOntologyToModule(unittest.TestCase):
 	prov_Activity -> uml_Activity [arrowtail=empty dir=back fontname="Bitstream Vera Sans" fontsize=8]
 	prov_Activity [label="{prov:Activity|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
 	uml_Activity [label="{uml:Activity|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+	uml_Activity -> paml_BehaviorExecution [arrowtail=empty dir=back fontname="Bitstream Vera Sans" fontsize=8]
+	paml_BehaviorExecution [label="{paml:BehaviorExecution|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
 }\n'''
         self.assertEqual(dot_source_actual, dot_source_expected) 
 

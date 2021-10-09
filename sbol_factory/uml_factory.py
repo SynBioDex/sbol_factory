@@ -27,35 +27,34 @@ class UMLFactory:
     def generate(self, output_path):
         if not os.path.exists(output_path):
             os.mkdir(output_path)
-        with self.tex.create(pylatex.Section('Data Model')):
-            for class_uri in self.query.query_classes():
-                # Don't try to document classes in the graph
-                # that don't belong to this ontology specifically
-                if self.namespace not in class_uri:
-                    continue
+        for class_uri in self.query.query_classes():
+            # Don't try to document classes in the graph
+            # that don't belong to this ontology specifically
+            if self.namespace not in class_uri:
+                continue
 
-                # Skip subclasses in the same ontology, since these
-                # will be clustered into the same diagram as the super
-                if self.namespace in self.query.query_superclass(class_uri):
-                    continue
-                class_name = sbol.utils.parse_class_name(class_uri)
-                dot = graphviz.Digraph(class_name)
-                # dot.graph_attr['splines'] = 'ortho'
+            # Skip subclasses in the same ontology, since these
+            # will be clustered into the same diagram as the super
+            if self.namespace in self.query.query_superclass(class_uri):
+                continue
+            class_name = sbol.utils.parse_class_name(class_uri)
+            dot = graphviz.Digraph(class_name)
+            # dot.graph_attr['splines'] = 'ortho'
 
-                superclass_uri = self.query.query_superclass(class_uri)
-                create_inheritance(dot, superclass_uri, class_uri)
+            superclass_uri = self.query.query_superclass(class_uri)
+            create_inheritance(dot, superclass_uri, class_uri)
 
-                # Order matters here, as the label for an entity
-                # will depend on the last rendering method called
-                print('Rendering ' + class_uri)
-                self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
-                self._generate(class_uri, self.draw_class_definition, dot)
-                self._generate(class_uri, self.write_class_definition, output_path, 0)
-                dot_source_sanitized = dot.source.replace('\\\\', '\\')
-                dot_source_sanitized = remove_duplicates(dot_source_sanitized)
-                source = graphviz.Source(dot_source_sanitized)
-                outfile = f'{class_name}_abstraction_hierarchy'
-                source.render(os.path.join(output_path, outfile))
+            # Order matters here, as the label for an entity
+            # will depend on the last rendering method called
+            print('Rendering ' + class_uri)
+            self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
+            self._generate(class_uri, self.draw_class_definition, dot)
+            self._generate(class_uri, self.write_class_definition, output_path, 0)
+            dot_source_sanitized = dot.source.replace('\\\\', '\\')
+            dot_source_sanitized = remove_duplicates(dot_source_sanitized)
+            source = graphviz.Source(dot_source_sanitized)
+            outfile = f'{class_name}_abstraction_hierarchy'
+            source.render(os.path.join(output_path, outfile))
         fname_tex = f'{self.prefix}DataModel'
         self.tex.generate_tex(fname_tex)
         fname_tex += '.tex'

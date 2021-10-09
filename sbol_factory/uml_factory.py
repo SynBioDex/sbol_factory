@@ -108,7 +108,7 @@ class UMLFactory:
         if tex_description:
             self.tex.append(pylatex.NoEscape(tex_description))
             self.tex.append(pylatex.NewLine())
-            self.tex.append(pylatex.NewLine())
+            self.tex.append(pylatex.LineBreak())
 
         if HEADER_LEVEL == 'subsection':
             scaled_figure_width = figure_width / (470 / 0.7)

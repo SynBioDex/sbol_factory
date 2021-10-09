@@ -102,8 +102,8 @@ class UMLFactory:
         tex_description = self.query.query_comment(class_uri)
         if tex_description:
             self.tex.append(pylatex.NoEscape(tex_description))
-            self.tex.append(pylatex.LineBreak())
-            self.tex.append(pylatex.LineBreak())
+            self.tex.append(pylatex.NewLine())
+            self.tex.append(pylatex.NewLine())
 
         if HEADER_LEVEL == 'subsection':
             with self.tex.create(pylatex.Figure(position='h!')) as figure:

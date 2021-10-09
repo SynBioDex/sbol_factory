@@ -2,8 +2,8 @@ from .query import Query
 
 import sbol3 as sbol
 import pylatex
+from PyPDF2 import PdfFileReader
 
-import posixpath
 import os
 import graphviz
 from math import inf
@@ -49,12 +49,18 @@ class UMLFactory:
             print('Rendering ' + class_uri)
             self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
             self._generate(class_uri, self.draw_class_definition, dot)
-            self._generate(class_uri, self.write_class_definition, output_path, 0)
+
             dot_source_sanitized = dot.source.replace('\\\\', '\\')
             dot_source_sanitized = remove_duplicates(dot_source_sanitized)
             source = graphviz.Source(dot_source_sanitized)
             outfile = f'{class_name}_abstraction_hierarchy'
             source.render(os.path.join(output_path, outfile))
+            outfile += '.pdf'
+            width = 470  # default \textwidth of LaTeX document
+            with open(os.path.join(output_path, outfile), 'rb') as pdf:
+                width = PdfFileReader(pdf).getPage(0).mediaBox[2]
+            self._generate(class_uri, self.write_class_definition, output_path, 0, width)
+
         fname_tex = f'{self.prefix}DataModel'
         self.tex.generate_tex(fname_tex)
         fname_tex += '.tex'
@@ -81,7 +87,7 @@ class UMLFactory:
             self._generate(uri, drawing_method_callback, *args)
 
 
-    def write_class_definition(self, class_uri, superclass_uri, output_path, header_level):
+    def write_class_definition(self, class_uri, superclass_uri, output_path, header_level, figure_width):
         header_level += 1
         CLASS_URI = class_uri
         CLASS_NAME = sbol.utils.parse_class_name(class_uri)
@@ -106,9 +112,13 @@ class UMLFactory:
             self.tex.append(pylatex.NewLine())
 
         if HEADER_LEVEL == 'subsection':
+            scaled_figure_width = figure_width / (470 / 0.7)
+            if scaled_figure_width > 1.0:
+                scaled_figure_width = 1.0
+            print(figure_width, scaled_figure_width)
             with self.tex.create(pylatex.Figure(position='h!')) as figure:
                 fname = os.path.join(output_path, f'{CLASS_NAME}_abstraction_hierarchy.pdf')
-                figure.add_image(fname)
+                figure.add_image(fname, width=pylatex.NoEscape(f'{scaled_figure_width}\\textwidth'))
                 figure.add_caption(CLASS_NAME)
                 self.tex.append(pylatex.NoEscape(f'\label{{fig:{CLASS_NAME}}}'))
 
@@ -174,7 +184,7 @@ class UMLFactory:
                 tex_description = f'The \{CMD}{{{PNAME}}} property is {OPTIONALITY} and {PLURALITY} of type {DT}' 
                 tex_description += self.query.query_comment(property_uri)
                 items.add_item(pylatex.NoEscape(tex_description))
-        return [output_path, header_level]
+        return [output_path, header_level, figure_width]
 
     def draw_abstraction_hierarchy(self, class_uri, superclass_uri, dot_graph=None):
 

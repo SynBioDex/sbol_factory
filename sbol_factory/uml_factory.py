@@ -46,7 +46,6 @@ class UMLFactory:
 
             # Order matters here, as the label for an entity
             # will depend on the last rendering method called
-            print('Rendering ' + class_uri)
             self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
             self._generate(class_uri, self.draw_class_definition, dot)
 
@@ -105,7 +104,7 @@ class UMLFactory:
 
         self.tex.append(pylatex.NoEscape(f"\{HEADER_LEVEL}{{{CLASS_NAME}}}"))
         self.tex.append(pylatex.NoEscape(f"\label{{sec:{self.prefix}:{CLASS_NAME}}}"))
-        tex_description = self.query.query_comment(class_uri)
+        tex_description = self.format_description(class_uri)
         if tex_description:
             self.tex.append(pylatex.NoEscape(tex_description))
             self.tex.append(pylatex.NewLine())
@@ -115,7 +114,6 @@ class UMLFactory:
             scaled_figure_width = figure_width / (470 / 0.7)
             if scaled_figure_width > 1.0:
                 scaled_figure_width = 1.0
-            print(figure_width, scaled_figure_width)
             with self.tex.create(pylatex.Figure(position='h!')) as figure:
                 fname = os.path.join(output_path, f'{CLASS_NAME}_abstraction_hierarchy.pdf')
                 figure.add_image(fname, width=pylatex.NoEscape(f'{scaled_figure_width}\\textwidth'))
@@ -135,7 +133,7 @@ class UMLFactory:
         property_names = [sbol.utils.parse_class_name(p) for p in self.query.query_properties(CLASS_URI)]
         if len(property_names):
             property_names = [f'\{CMD1}{{{pname}}}' for pname in property_names]
-            tex_description = f'\{CMD1}{{{CLASS_NAME}}} includes the following properties: ' + ', '.join(property_names) + '. '
+            tex_description = f'This class includes the following properties: ' + ', '.join(property_names) + '. '
             self.tex.append(pylatex.NoEscape(tex_description))
 
         with self.tex.create(pylatex.Itemize()) as items:
@@ -352,6 +350,25 @@ class UMLFactory:
         #     source.render(f'./uml/{CLASS_NAME}')
         return [dot_graph]
 
+    def format_description(self, class_uri):
+        tex_description = self.query.query_comment(class_uri)
+        class_list = self.query.query_classes()
+        for uri in class_list:
+            prefix = format_prefix(uri)
+            if prefix == '':
+                continue
+            class_name = sbol.utils.parse_class_name(uri)
+            qname = format_qname(uri)
+            tex_description = tex_description.replace(f' {qname} ', f' \\{prefix}{{{class_name}}} ')
+            tex_description = tex_description.replace(f' {qname}.', f' \\{prefix}{{{class_name}}}.')
+            tex_description = tex_description.replace(f' {qname},', f' \\{prefix}{{{class_name}}},')
+
+            tex_description = tex_description.replace(f' {class_name} ', f' \\{prefix}{{{class_name}}} ')
+            tex_description = tex_description.replace(f' {class_name}.', f' \\{prefix}{{{class_name}}}.')
+            tex_description = tex_description.replace(f' {class_name},', f' \\{prefix}{{{class_name}}},')
+
+        return tex_description
+            
 
 def format_qname(class_uri):
     class_name = sbol.utils.parse_class_name(class_uri)

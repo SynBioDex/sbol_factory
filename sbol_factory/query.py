@@ -90,6 +90,37 @@ class Query():
             superclass = str(row[0])
         return superclass
 
+    def query_ancestors(self, class_uri):
+        query = f'''
+            SELECT distinct ?superclass
+            WHERE 
+            {{{{
+                <{class_uri}> rdfs:subClassOf* ?superclass .
+                ?superclass rdf:type owl:Class .
+            }}}}
+            '''
+        response = self.graph.query(query)
+        if len(response) == 0:
+            raise Exception('{} has no ancestors'.format(subclass))
+        return [str(row[0]) for row in response]
+
+
+    def query_descendants(self, class_uri):
+        query = f'''
+            SELECT distinct ?descendant
+            WHERE 
+            {{{{
+                ?descendant rdf:type owl:Class .
+                ?descendant rdfs:subClassOf* <{class_uri}>
+            }}}}
+            '''
+        response = self.graph.query(query)
+        if len(response) == 0:
+            raise Exception('{} has no superclass'.format(subclass))
+        return [str(row[0]) for row in response]
+
+
+
     def query_object_properties(self, class_uri):
         query =     '''
             SELECT distinct ?property_uri

@@ -16,7 +16,8 @@ setup(name='sbol_factory',
             'python-dateutil>=2.8.1',
             'requests',
             'graphviz',
-            'pylatex'
+            'pylatex',
+            'PyPDF2'
       ],
       packages=['sbol_factory'],
       package_data={'sbol_factory': ['rdf/*', 'sparql/*']},

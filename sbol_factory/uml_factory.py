@@ -56,8 +56,7 @@ class UMLFactory:
                 source = graphviz.Source(dot_source_sanitized)
                 outfile = f'{class_name}_abstraction_hierarchy'
                 source.render(os.path.join(output_path, outfile))
-        print(f'Writing to {output_path}')
-        fname_tex = os.path.join(output_path, self.prefix)
+        fname_tex = f'{self.prefix}DataModel'
         self.tex.generate_tex(fname_tex)
         fname_tex += '.tex'
         with open(fname_tex, 'r') as f:
@@ -68,8 +67,10 @@ class UMLFactory:
         lpos = tex_source.find(opening_clause) + len(opening_clause)
         rpos = tex_source.find(closing_clause)
         tex_source = tex_source[lpos:rpos]  
-        with open('dataModel.tex', 'w') as f:
+        with open(fname_tex, 'w') as f:
             f.write(tex_source)
+        print(f'Wrote ./{fname_tex}')
+        print(f'Wrote figures to {output_path}')
 
     def _generate(self, class_uri, drawing_method_callback, *args):
         superclass_uri = self.query.query_superclass(class_uri)

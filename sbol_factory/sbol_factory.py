@@ -77,6 +77,8 @@ class SBOLFactory():
     namespace_to_prefix = {}
 
     def __new__(cls, module_name, ontology_path, ontology_namespace, verbose=False):
+        if verbose is False:
+            logging.disable('INFO')
         SBOLFactory.graph.parse(ontology_path, format=rdflib.util.guess_format(ontology_path))
         for prefix, ns in SBOLFactory.graph.namespaces():
             SBOLFactory.namespace_to_prefix[str(ns)] = prefix

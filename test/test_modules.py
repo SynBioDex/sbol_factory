@@ -8,12 +8,6 @@ from sbol_factory import SBOLFactory, UMLFactory
 
 class TestOntologyToModule(unittest.TestCase):
 
-    def setUp(self):
-        SBOLFactory.clear()
-
-    def tearDown(self):
-        SBOLFactory.clear()
-
     def test_ontology_to_module(self):
         SBOLFactory('uml',
                     os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-modules.ttl'),
@@ -38,9 +32,9 @@ class TestOntologyToModule(unittest.TestCase):
         figure_maker.generate(tmp)
         dot_source_actual = ''
         with open(os.path.join(tmp, 'Activity_abstraction_hierarchy')) as dot_file:
-            dot_source_actual = dot_file.read()
+            dot_source_actual = dot_file.read().replace(' ', '')
         with open(os.path.join(path, 'Activity_abstraction_hierarchy.dot')) as dot_file:
-            dot_source_expected = dot_file.read()
+            dot_source_expected = dot_file.read().replace(' ', '')
         self.assertEqual(dot_source_actual, dot_source_expected) 
 
     def test_figure_generation2(self):
@@ -54,9 +48,9 @@ class TestOntologyToModule(unittest.TestCase):
         figure_maker.generate(tmp)
         dot_source_actual = ''
         with open(os.path.join(tmp, 'Base_abstraction_hierarchy')) as dot_file:
-            dot_source_actual = dot_file.read()
+            dot_source_actual = dot_file.read().replace(' ', '')
         with open(os.path.join(path, 'Base_abstraction_hierarchy.dot')) as dot_file:
-            dot_source_expected = dot_file.read()
+            dot_source_expected = dot_file.read().replace(' ', '')
         self.assertEqual(dot_source_actual, dot_source_expected) 
 
 

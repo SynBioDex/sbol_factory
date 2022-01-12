@@ -40,6 +40,7 @@ class UMLFactory:
             class_name = sbol.utils.parse_class_name(class_uri)
             dot = graphviz.Digraph(class_name)
             # dot.graph_attr['splines'] = 'ortho'
+            dot.graph_attr['dpi'] = '300'
 
             superclass_uri = self.query.query_superclass(class_uri)
             create_inheritance(dot, superclass_uri, class_uri)
@@ -53,6 +54,8 @@ class UMLFactory:
             dot_source_sanitized = remove_duplicates(dot_source_sanitized)
             source = graphviz.Source(dot_source_sanitized)
             outfile = f'{class_name}_abstraction_hierarchy'
+            source.render(os.path.join(output_path, outfile))
+            source = graphviz.Source(dot_source_sanitized, format='png')
             source.render(os.path.join(output_path, outfile))
             outfile += '.pdf'
             width = 470  # default \textwidth of LaTeX document

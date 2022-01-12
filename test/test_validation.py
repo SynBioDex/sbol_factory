@@ -30,7 +30,7 @@ class TestValidation(unittest.TestCase):
         v = doc.validate()
         assert len(v.errors) == 2, f'Expected 2 errors, found {len(v.errors)}'
         assert str(v.errors[0]) == 'https://test.org/water: Too few values for property types. Expected 1, found 0'
-        assert str(v.errors[1]) == 'https://test.org/water: Less than 1 values on <https://test.org/water>->sbol:type'
+        assert str(v.errors[1]) == 'https://test.org/water: http://sbols.org/v3#type: Less than 1 values on <https://test.org/water>->sbol:type'
         assert not v.warnings, "".join(str(e) for e in doc.validate().warnings)
 
     def test_invalid_extension(self):

@@ -8,15 +8,24 @@ from sbol_factory import SBOLFactory, UMLFactory
 
 class TestOntologyToModule(unittest.TestCase):
 
+    def setUp(self):
+        SBOLFactory.clear()
+
+    def tearDown(self):
+        SBOLFactory.clear()
+
     def test_ontology_to_module(self):
+        self.assertTrue(check_namespaces())
         SBOLFactory('uml',
                     os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-modules.ttl'),
                     'http://bioprotocols.org/uml#')
         self.assertTrue('uml' in sys.modules)
+        self.assertTrue(check_namespaces())
         SBOLFactory('paml',
                     os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files/test-modules.ttl'),
                     'http://bioprotocols.org/paml#')
         self.assertTrue('paml' in sys.modules)
+        self.assertTrue(check_namespaces())
         import uml
         import paml
         uml.Activity('http://test.org/umlact')
@@ -53,6 +62,12 @@ class TestOntologyToModule(unittest.TestCase):
             dot_source_expected = dot_file.read().replace(' ', '')
         self.assertEqual(dot_source_actual, dot_source_expected) 
 
+def check_namespaces():
+    prefixes = [p for p, ns in SBOLFactory.graph.namespaces()]
+    if 'default1' in prefixes:
+        print(prefixes)
+        return False
+    return True
 
 if __name__ == '__main__':
     unittest.main()

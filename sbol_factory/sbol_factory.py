@@ -21,10 +21,9 @@ OM = 'http://www.ontology-of-units-of-measure.org/resource/om-2/'
 PROVO = 'http://www.w3.org/ns/prov#'
 
 
-#logging.basicConfig(format='%(message)s')
-logging.getLogger().handlers = []
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.INFO)
+
 # create console handler with a higher log level
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
@@ -34,6 +33,7 @@ ch2 = logging.StreamHandler()
 ch2.setLevel(logging.ERROR)
 ch2.setFormatter(logging.Formatter('[%(levelname)s] %(filename)s %(lineno)d: %(message)s'))
 LOGGER.addHandler(ch2)
+
 
 class Document(sbol.Document):
 
@@ -78,7 +78,7 @@ class SBOLFactory():
 
     def __new__(cls, module_name, ontology_path, ontology_namespace, verbose=False):
         if verbose is False:
-            logging.disable('INFO')
+            logging.disable(logging.INFO)
         SBOLFactory.graph.parse(ontology_path, format=rdflib.util.guess_format(ontology_path))
         for prefix, ns in SBOLFactory.graph.namespaces():
             SBOLFactory.namespace_to_prefix[str(ns)] = prefix

@@ -4,6 +4,8 @@ import unittest
 import filecmp
 import sbol3
 import test_files
+import logging
+logging.disable()
 from sbol_factory import SBOLFactory
 
 

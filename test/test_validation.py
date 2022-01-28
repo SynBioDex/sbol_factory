@@ -1,9 +1,9 @@
 import unittest
 import sbol3
 import test_files
+import logging
+logging.disable()
 
-print('**************')
-print(sbol3.__file__)
 
 class TestValidation(unittest.TestCase):
     def test_valid_document(self):

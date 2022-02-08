@@ -6,11 +6,9 @@ from setuptools import setup
 
 setup(name='sbol_factory',
       description='Ontology-driven data modeling',
-      version='1.0a11',
+      version='1.0a12',
       install_requires=[
-            'sbol3>=1.0b6',
-            'rdflib>=6.0.0',
-            'rdflib-jsonld>=0.5.0',
+            'sbol3>=1.0b12',  # Note: implicitly includes rdflib
             'sparqlwrapper>=1.8.5',
             'pyshacl>=0.13.3',
             'python-dateutil>=2.8.1',

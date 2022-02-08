@@ -8,9 +8,7 @@ setup(name='sbol_factory',
       description='Ontology-driven data modeling',
       version='1.0a12',
       install_requires=[
-            'sbol3>=1.0b12',
-            # Require at least rdflib 6.0.1, and allow newer versions of rdflib 6.x
-            'rdflib>=6.1.1,==6.*',
+            'sbol3>=1.0b12',  # Note: implicitly includes rdflib
             'sparqlwrapper>=1.8.5',
             'pyshacl>=0.13.3',
             'python-dateutil>=2.8.1',

@@ -74,6 +74,13 @@ class TestOntologyActions(unittest.TestCase):
 
         temp_name = os.path.join(tempfile.gettempdir(), 'mini_library.nt')
         doc.write(temp_name, sbol3.SORTED_NTRIPLES)
+        
+        #Use \n as a newline instead of \r\n for windows compatibility
+        with open(temp_name) as f:
+            file_str = f.read()
+        with open(temp_name, "w", newline='\n') as f:
+            f.write(file_str)
+
         print(f'Wrote file as {temp_name}')
 
         comparison_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files', 'mini_library.nt')
@@ -93,6 +100,13 @@ class TestOntologyActions(unittest.TestCase):
 
         temp_name = os.path.join(tempfile.gettempdir(), 'mini_library.nt')
         doc.write(temp_name, sbol3.SORTED_NTRIPLES)
+        
+        #Use \n as a newline instead of \r\n for windows compatibility
+        with open(temp_name) as f:
+            file_str = f.read()
+        with open(temp_name, "w", newline='\n') as f:
+            f.write(file_str)
+        
         print(f'Wrote file as {temp_name}')
 
         print(f'Comparing against {original_file}')

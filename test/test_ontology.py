@@ -72,20 +72,14 @@ class TestOntologyActions(unittest.TestCase):
         v = doc.validate()
         assert not v.errors and not v.warnings, "".join(str(e) for e in doc.validate().errors)
 
-        temp_name = os.path.join(tempfile.gettempdir(), 'mini_library.nt')
-        doc.write(temp_name, sbol3.SORTED_NTRIPLES)
+        actual = doc.write_string(file_format=sbol3.SORTED_NTRIPLES)
         
-        #Use \n as a newline instead of \r\n for windows compatibility
-        with open(temp_name) as f:
-            file_str = f.read()
-        with open(temp_name, "w", newline='\n') as f:
-            f.write(file_str)
-
-        print(f'Wrote file as {temp_name}')
-
         comparison_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_files', 'mini_library.nt')
         print(f'Comparing against {comparison_file}')
-        assert filecmp.cmp(temp_name, comparison_file), "Files are not identical"
+        doc = sbol3.Document()
+        doc.read(comparison_file)
+        expected = doc.write_string(file_format=sbol3.SORTED_NTRIPLES)
+        assert expected == actual
         print('File identical with test file')
 
     def test_round_trip_with_ontology(self):
@@ -98,19 +92,12 @@ class TestOntologyActions(unittest.TestCase):
         v = doc.validate()
         assert not v.errors and not v.warnings, "".join(str(e) for e in doc.validate().errors)
 
-        temp_name = os.path.join(tempfile.gettempdir(), 'mini_library.nt')
-        doc.write(temp_name, sbol3.SORTED_NTRIPLES)
-        
-        #Use \n as a newline instead of \r\n for windows compatibility
-        with open(temp_name) as f:
-            file_str = f.read()
-        with open(temp_name, "w", newline='\n') as f:
-            f.write(file_str)
-        
-        print(f'Wrote file as {temp_name}')
+        with open(original_file, 'r') as f:
+            expected = f.read()
+        actual = doc.write_string(file_format=sbol3.SORTED_NTRIPLES)
 
         print(f'Comparing against {original_file}')
-        assert filecmp.cmp(temp_name, original_file), "Files are not identical"
+        assert actual == expected, "Files are not identical"
         print('Written out file identical with original file')
 
 

@@ -1,0 +1,16 @@
+digraph Base {
+	graph [dpi=300]
+	sbol_TopLevel -> test_Base [arrowtail=empty dir=back fontname="Bitstream Vera Sans" fontsize=8]
+	sbol_TopLevel [label="{sbol:TopLevel|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+	test_Base [label="{test:Base|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+	test_Base -> test_Derived1 [arrowtail=empty dir=back fontname="Bitstream Vera Sans" fontsize=8]
+	test_Derived1 [label="{test:Derived1|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+	test_Base -> test_Derived2 [arrowtail=empty dir=back fontname="Bitstream Vera Sans" fontsize=8]
+	test_Derived2 [label="{test:Derived2|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+	test_Derived2 -> test_Child [arrowhead=vee arrowtail=diamond dir=both fontname="Bitstream Vera Sans" fontsize=8 xlabel="test:hasChild [0..*]"]
+	test_Child [label="{test:Child|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+	test_Child -> test_ChildDerived1 [arrowtail=empty dir=back fontname="Bitstream Vera Sans" fontsize=8]
+	test_ChildDerived1 [label="{test:ChildDerived1|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+	test_Child -> test_ChildDerived2 [arrowtail=empty dir=back fontname="Bitstream Vera Sans" fontsize=8]
+	test_ChildDerived2 [label="{test:ChildDerived2|}" fontname="Bitstream Vera Sans" fontsize=8 shape=record]
+}

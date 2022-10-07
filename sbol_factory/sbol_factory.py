@@ -75,14 +75,19 @@ class SBOLFactory():
 
     # Prefixes are used to automatically generate module names
     namespace_to_prefix = {}
+    for ns, prefix in graph.namespaces():
+        namespace_to_prefix[str(ns)] = prefix
 
     def __new__(cls, module_name, ontology_path, ontology_namespace, verbose=False):
         if verbose is False:
             logging.disable(logging.INFO)
         SBOLFactory.graph.parse(ontology_path, format=rdflib.util.guess_format(ontology_path))
         for prefix, ns in SBOLFactory.graph.namespaces():
-            SBOLFactory.namespace_to_prefix[str(ns)] = prefix
+            # Skip default prefixes
+            if ns in SBOLFactory.namespace_to_prefix:
+                continue
             # TODO: handle namespace with conflicting prefixes
+            SBOLFactory.namespace_to_prefix[str(ns)] = prefix
 
         # Use ontology prefix as module name
         ontology_namespace = ontology_namespace

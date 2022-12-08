@@ -9,6 +9,7 @@ import graphviz
 from math import inf
 from collections import OrderedDict
 
+GLOBALS = set()
 
 class UMLFactory:
     """
@@ -32,11 +33,14 @@ class UMLFactory:
             # that don't belong to this ontology specifically
             if self.namespace not in class_uri:
                 continue
-
+            print('Generating ' + class_uri)
             # Skip subclasses in the same ontology, since these
             # will be clustered into the same diagram as the super
             if self.namespace in self.query.query_superclass(class_uri):
                 continue
+
+            GLOBALS.add(class_uri)
+
             class_name = sbol.utils.parse_class_name(class_uri)
             dot = graphviz.Digraph(class_name)
             # dot.graph_attr['splines'] = 'ortho'
@@ -46,8 +50,8 @@ class UMLFactory:
 
             # Order matters here, as the label for an entity
             # will depend on the last rendering method called
-            self._generate(class_uri, self.draw_abstraction_hierarchy, dot)
-            self._generate(class_uri, self.draw_class_definition, dot)
+            self._generate(class_uri, self.draw_abstraction_hierarchy, 0, class_name, dot)
+            self._generate(class_uri, self.draw_class_definition, 0, class_name, dot)
 
             dot_source_sanitized = dot.source.replace('\\\\', '\\')
             dot_source_sanitized = remove_duplicates(dot_source_sanitized)
@@ -58,7 +62,7 @@ class UMLFactory:
             width = 470  # default \textwidth of LaTeX document
             with open(os.path.join(output_path, outfile), 'rb') as pdf:
                 width = PdfFileReader(pdf).getPage(0).mediaBox[2]
-            self._generate(class_uri, self.write_class_definition, output_path, 0, width)
+            self._generate(class_uri, self.write_class_definition, 0, class_name, output_path, width)
 
         fname_tex = f'{self.prefix}DataModel'
         self.tex.generate_tex(fname_tex)
@@ -70,28 +74,35 @@ class UMLFactory:
         closing_clause = '\\end{document}'
         lpos = tex_source.find(opening_clause) + len(opening_clause)
         rpos = tex_source.find(closing_clause)
-        tex_source = tex_source[lpos:rpos]  
+        tex_source = tex_source[lpos:rpos]
         with open(fname_tex, 'w') as f:
             f.write(tex_source)
         print(f'Wrote ./{fname_tex}')
         print(f'Wrote figures to {output_path}')
 
-    def _generate(self, class_uri, drawing_method_callback, *args):
+    def _generate(self, class_uri, drawing_method_callback, level, fig_ref,  *args):
         superclass_uri = self.query.query_superclass(class_uri)
-        args = drawing_method_callback(class_uri, superclass_uri, *args)
+        drawing_method_callback(class_uri, superclass_uri, level, fig_ref, *args)
+        if class_uri in GLOBALS or class_uri in completed or 'sbol' in class_uri:
+            return
+        print(f'  Generating ' + class_uri)
+
+
+        child_class_uris = [self.query.query_property_datatype(p, class_uri)[0] for p in self.query.query_compositional_properties(class_uri)]
+        for uri in child_class_uris:
+            self._generate(uri, drawing_method_callback, level, fig_ref, *args)
 
         subclass_uris = self.query.query_subclasses(class_uri)
-        child_class_uris = [self.query.query_property_datatype(p, class_uri)[0] for p in self.query.query_compositional_properties(class_uri)]
-        for uri in subclass_uris + child_class_uris:
-            self._generate(uri, drawing_method_callback, *args)
+        for uri in subclass_uris:
+            level += 1
+            self._generate(uri, drawing_method_callback, level, fig_ref, *args)
 
 
-    def write_class_definition(self, class_uri, superclass_uri, output_path, header_level, figure_width):
-        header_level += 1
+    def write_class_definition(self, class_uri, superclass_uri, header_level, fig_ref, output_path, figure_width):
         CLASS_URI = class_uri
         CLASS_NAME = sbol.utils.parse_class_name(class_uri)
         SUPERCLASS_NAME = sbol.utils.parse_class_name(superclass_uri)
-        FIG_REF = sbol.utils.parse_class_name(self.query.query_ancestors(class_uri)[-header_level])
+        FIG_REF = fig_ref
         CMD1 = format_prefix(class_uri)
         CMD2 = format_prefix(superclass_uri)
         HEADER_LEVEL = 'subsection'
@@ -182,9 +193,9 @@ class UMLFactory:
                 tex_description = f'The \{CMD}{{{PNAME}}} property is {OPTIONALITY} and {PLURALITY} of type {DT}' 
                 tex_description += self.query.query_comment(property_uri)
                 items.add_item(pylatex.NoEscape(tex_description))
-        return [output_path, header_level, figure_width]
+        return [output_path, figure_width]
 
-    def draw_abstraction_hierarchy(self, class_uri, superclass_uri, dot_graph=None):
+    def draw_abstraction_hierarchy(self, class_uri, superclass_uri, header_level, fig_ref, dot_graph=None):
 
 
         #if len(subclass_uris) <= 1:
@@ -209,7 +220,7 @@ class UMLFactory:
             create_inheritance(dot, class_uri, uri)
             label = self.label_properties(uri)
             create_uml_record(dot, uri, label)
-            self.draw_class_definition(uri, class_uri, dot)
+            self.draw_class_definition(uri, class_uri, header_level, fig_ref, dot)
         return [dot_graph]
 
     def label_properties(self, class_uri):
@@ -271,7 +282,7 @@ class UMLFactory:
         label = '{' + label + '}'  # graphviz syntax for record-style label
         return label
 
-    def draw_class_definition(self, class_uri, superclass_uri, dot_graph=None):
+    def draw_class_definition(self, class_uri, superclass_uri, header_level, fig_ref, dot_graph=None):
 
         CLASS_URI = class_uri
         CLASS_NAME = sbol.utils.parse_class_name(class_uri)

@@ -2,7 +2,12 @@ from .query import Query
 
 import sbol3 as sbol
 import pylatex
-from PyPDF2 import PdfFileReader
+import PyPDF2
+if PyPDF2.__version__.split('.')[0] < '3':
+   from PyPDF2 import PdfFileReader
+else:
+   # PdfFileReader is deprecated and was removed in PyPDF2 3.0.0. Use PdfReader instead.
+   from PyPDF2 import PdfReader as PdfFileReader
 
 import os
 import graphviz
@@ -61,7 +66,12 @@ class UMLFactory:
             outfile += '.pdf'
             width = 470  # default \textwidth of LaTeX document
             with open(os.path.join(output_path, outfile), 'rb') as pdf:
-                width = PdfFileReader(pdf).getPage(0).mediaBox[2]
+                if PyPDF2.__version__.split('.')[0] < '3':
+                    # reader.getPage(pageNumber) is deprecated and was removed in PyPDF2 3.0.0. Use reader.pages[page_number] instead.
+                    width = PdfFileReader(pdf).getPage(0).mediaBox[2]
+                else:
+                    width = PdfFileReader(pdf).pages[0].mediabox[2]
+
             self._generate(class_uri, self.write_class_definition, 0, class_name, output_path, width)
 
         fname_tex = f'{self.prefix}DataModel'

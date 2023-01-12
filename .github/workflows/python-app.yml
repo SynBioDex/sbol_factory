@@ -26,7 +26,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Setup Graphviz
-      uses: ts-graphviz/setup-graphviz@v1
+      uses: ts-graphviz/setup-graphviz@v1.2
+      with:
+        # Skip to run brew update command on macOS.
+        # See https://github.com/ts-graphviz/setup-graphviz/issues/457
+        macos-skip-brew-update: 'true' # defalt false
     - name: Install Python dependencies
       shell: bash
       run: |

@@ -6,12 +6,12 @@ from setuptools import setup
 
 setup(name='sbol_factory',
       description='Ontology-driven data modeling',
-      version='1.1.1.post1',
+      version='1.1.2',
       install_requires=[
             'sbol3>=1.0b12',  # Note: implicitly includes rdflib
             'sparqlwrapper>=1.8.5',
             'pyshacl>=0.13.3',
-            'python-dateutil>=2.8.1',
+            'python-dateutil>=2.9',
             'requests',
             'graphviz',
             'pylatex',
